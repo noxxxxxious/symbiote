@@ -1,0 +1,14 @@
+module components
+
+singleton Config 1.0 Config.qml
+singleton Theme 1.0 Theme.qml
+singleton LauncherController 1.0 LauncherController.qml
+singleton AppUsage 1.0 AppUsage.qml
+singleton HyprState 1.0 HyprState.qml
+
+Border 1.0 Border.qml
+AnimatedPanel 1.0 AnimatedPanel.qml
+Launcher 1.0 Launcher.qml
+Clock 1.0 Clock.qml
+TendrilManager 1.0 TendrilManager.qml
+Exclusions 1.0 Exclusions.qml

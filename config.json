@@ -1,0 +1,50 @@
+{
+    "panels": {
+        "backgroundColor": "transparent"
+    },
+    "launcher": {
+        "backgroundColor": "transparent",
+        "showIcons": true
+    },
+    "clock": {
+        "position": "top-left",
+        "slideDirection": "diagonal"
+    },
+    "text": {
+      "color": "#cad3f5",
+      "soft": "#a5adcb",
+      "accent": "#a6da95"
+    },
+    "border": {
+        "thickness": 12,
+        "rounding": 32,
+        "smoothing": 1.5,
+        "color": "#1e2030",
+        "opacity": 1.0
+    },
+    "shadow": {
+        "enabled": true,
+        "color": "#000000",
+        "opacity": 0.6,
+        "falloff": 24
+    },
+    "innerEdge": {
+        "enabled": true,
+        "color": "#181926",
+        "intensity": 0.8,
+        "falloff": 16
+    },
+    "tendrils": {
+        "growSpeed": 0.8,
+        "shrinkSpeed": 0.2,
+        "blendRadius": 8,
+        "waistSmoothing": 20,
+        "jitter": 14,
+        "attachDistance": 60,
+        "tendrilsPer100px": 1,
+        "maxLengthRange": [120, 220],
+        "rootThicknessRange": [3, 5],
+        "panelThicknessRange": [2, 3],
+        "waistThicknessRange": [1, 1]
+    }
+}

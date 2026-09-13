@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Compiles every .frag/.vert in ./shaders into RHI-portable .qsb bytecode.
+# Requires qt6-shadertools (provides the `qsb` binary) - same tool caelestia's
+# build depends on (see its manual install deps: qt6-shadertools). Run this
+# any time you edit a shader, or wire it into your CMake/build step later.
+set -euo pipefail
+
+SHADER_DIR="${1:-shaders}"
+
+for f in "$SHADER_DIR"/*.frag "$SHADER_DIR"/*.vert; do
+    [ -e "$f" ] || continue
+    out="${f}.qsb"
+    echo "Compiling $f -> $out"
+    qsb --glsl "100 es,120,150" --hlsl 50 --msl 12 -o "$out" "$f"
+done
+
+echo "Done."
