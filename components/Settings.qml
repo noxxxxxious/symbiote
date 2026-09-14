@@ -330,22 +330,176 @@ Item {
 
                             // --- Clock ---
                             ColumnLayout {
-                                visible: contentCol.isTab("Clock") && (contentCol.matches("Clock", "Position") || contentCol.matches("Clock", "Slide Direction"))
+                                visible: contentCol.isTab("Clock")
+                                      && (
+                                          contentCol.matches("Clock", "Position")
+                                          || contentCol.matches("Clock", "Slide Direction")
+                                          || contentCol.matches("Clock", "Extra")
+                                          || contentCol.matches("Clock", "Short")
+                                          || contentCol.matches("Clock", "Long")
+                                          || contentCol.matches("Clock", "Reach")
+                                          || contentCol.matches("Clock", "Count")
+                                          || contentCol.matches("Clock", "Spread")
+                                          || contentCol.matches("Clock", "Tip")
+                                      )
+
                                 Layout.fillWidth: true
-                                Text { text: "CLOCK"; color: Theme.textColorAccent; font.bold: true; font.pixelSize: 12 }
+
+                                Text {
+                                    text: "CLOCK"
+                                    color: Theme.textColorAccent
+                                    font.bold: true
+                                    font.pixelSize: 12
+                                }
+
                                 SettingRow {
                                     label: "Corner Position"
                                     isEnum: true
-                                    enumOptions: ["bottom-left", "top-left", "bottom-right", "top-right"]
+                                    enumOptions: [
+                                        "bottom-left",
+                                        "top-left",
+                                        "bottom-right",
+                                        "top-right"
+                                    ]
                                     value: Config.sAdapter.clock.position
-                                    onCommit: function(val) { Config.sAdapter.clock.position = val; }
+                                    onCommit: function(val) {
+                                        Config.sAdapter.clock.position = val;
+                                    }
                                 }
+
                                 SettingRow {
                                     label: "Slide Direction"
                                     isEnum: true
-                                    enumOptions: ["diagonal", "vertical", "horizontal"]
+                                    enumOptions: [
+                                        "diagonal",
+                                        "vertical",
+                                        "horizontal"
+                                    ]
                                     value: Config.sAdapter.clock.slideDirection
-                                    onCommit: function(val) { Config.sAdapter.clock.slideDirection = val; }
+                                    onCommit: function(val) {
+                                        Config.sAdapter.clock.slideDirection = val;
+                                    }
+                                }
+
+                                SettingRow {
+                                    label: "Extra Tendrils"
+                                    isBool: true
+                                    boolVal: Config.sAdapter.clock.extraTendrils
+                                    onCommit: function(value) {
+                                        Config.sAdapter.clock.extraTendrils = value;
+                                    }
+                                }
+
+                                SettingRow {
+                                    visible: Config.sAdapter.clock.extraTendrils
+                                          && contentCol.matches("Clock", "Short", "Reach")
+                                    label: "Short Reach"
+                                    isNum: true
+                                    numMin: 0.05
+                                    numMax: 0.95
+                                    numStep: 0.01
+                                    value: Config.sAdapter.clock.extraShortReach
+                                    onCommit: function(value) {
+                                        Config.sAdapter.clock.extraShortReach = Number(value);
+                                    }
+                                }
+
+                                SettingRow {
+                                    visible: Config.sAdapter.clock.extraTendrils
+                                          && contentCol.matches("Clock", "Long", "Reach")
+                                    label: "Long Reach"
+                                    isNum: true
+                                    numMin: 0.05
+                                    numMax: 0.95
+                                    numStep: 0.01
+                                    value: Config.sAdapter.clock.extraLongReach
+                                    onCommit: function(value) {
+                                        Config.sAdapter.clock.extraLongReach = Number(value);
+                                    }
+                                }
+
+                                SettingRow {
+                                    visible: Config.sAdapter.clock.extraTendrils
+                                          && contentCol.matches("Clock", "Short", "Count")
+                                    label: "Short Count"
+                                    isNum: true
+                                    numMin: 0
+                                    numMax: 12
+                                    numStep: 1
+                                    value: Config.sAdapter.clock.extraShortCount
+                                    onCommit: function(value) {
+                                        Config.sAdapter.clock.extraShortCount = Math.round(Number(value));
+                                    }
+                                }
+
+                                SettingRow {
+                                    visible: Config.sAdapter.clock.extraTendrils
+                                          && contentCol.matches("Clock", "Long", "Count")
+                                    label: "Long Count"
+                                    isNum: true
+                                    numMin: 0
+                                    numMax: 12
+                                    numStep: 1
+                                    value: Config.sAdapter.clock.extraLongCount
+                                    onCommit: function(value) {
+                                        Config.sAdapter.clock.extraLongCount = Math.round(Number(value));
+                                    }
+                                }
+
+                                SettingRow {
+                                    visible: Config.sAdapter.clock.extraTendrils
+                                          && contentCol.matches("Clock", "Short", "Reach", "Spread")
+                                    label: "Short Root Spread"
+                                    isNum: true
+                                    numMin: 0.0
+                                    numMax: 0.90
+                                    numStep: 0.01
+                                    value: Config.sAdapter.clock.extraShortReachSpread
+                                    onCommit: function(value) {
+                                        Config.sAdapter.clock.extraShortReachSpread = Number(value);
+                                    }
+                                }
+
+                                SettingRow {
+                                    visible: Config.sAdapter.clock.extraTendrils
+                                          && contentCol.matches("Clock", "Long", "Reach", "Spread")
+                                    label: "Long Root Spread"
+                                    isNum: true
+                                    numMin: 0.0
+                                    numMax: 0.90
+                                    numStep: 0.01
+                                    value: Config.sAdapter.clock.extraLongReachSpread
+                                    onCommit: function(value) {
+                                        Config.sAdapter.clock.extraLongReachSpread = Number(value);
+                                    }
+                                }
+
+                                SettingRow {
+                                    visible: Config.sAdapter.clock.extraTendrils
+                                          && contentCol.matches("Clock", "Short", "Tip", "Spread")
+                                    label: "Short Tip Spread"
+                                    isNum: true
+                                    numMin: 0.0
+                                    numMax: 0.90
+                                    numStep: 0.01
+                                    value: Config.sAdapter.clock.extraShortTipSpread
+                                    onCommit: function(value) {
+                                        Config.sAdapter.clock.extraShortTipSpread = Number(value);
+                                    }
+                                }
+
+                                SettingRow {
+                                    visible: Config.sAdapter.clock.extraTendrils
+                                          && contentCol.matches("Clock", "Long", "Tip", "Spread")
+                                    label: "Long Tip Spread"
+                                    isNum: true
+                                    numMin: 0.0
+                                    numMax: 0.90
+                                    numStep: 0.01
+                                    value: Config.sAdapter.clock.extraLongTipSpread
+                                    onCommit: function(value) {
+                                        Config.sAdapter.clock.extraLongTipSpread = Number(value);
+                                    }
                                 }
                             }
 

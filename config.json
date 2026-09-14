@@ -7,6 +7,15 @@
         "thickness": 17
     },
     "clock": {
+        "extraLongCount": 1,
+        "extraLongReach": 0.13,
+        "extraLongReachSpread": 0.14,
+        "extraLongTipSpread": 0.55,
+        "extraShortCount": 2,
+        "extraShortReach": 0.14,
+        "extraShortReachSpread": 0.07,
+        "extraShortTipSpread": 0.61,
+        "extraTendrils": true,
         "position": "top-left",
         "slideDirection": "diagonal"
     },
@@ -25,7 +34,7 @@
         "amplitudeRange": 8,
         "animated": true,
         "animationSpeed": 9,
-        "enabled": true,
+        "enabled": false,
         "frequency": 0.076,
         "morphSpeed": 0.024,
         "peakSharpness": 4,

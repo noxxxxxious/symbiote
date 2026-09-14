@@ -47,6 +47,19 @@ FileView {
         property JsonObject clock: JsonObject {
             property string position: "bottom-left"
             property string slideDirection: "diagonal"
+            property bool extraTendrils: true
+
+            property real extraShortReach: 0.35
+            property real extraLongReach: 0.70
+
+            property int extraShortCount: 3
+            property int extraLongCount: 2
+
+            property real extraShortReachSpread: 0.12
+            property real extraLongReachSpread: 0.12
+
+            property real extraShortTipSpread: 0.55
+            property real extraLongTipSpread: 0.55
         }
 
         property JsonObject text: JsonObject {
