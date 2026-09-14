@@ -1,5 +1,6 @@
 pragma Singleton
 import QtQuick
+import Quickshell
 import "."
 
 QtObject {
@@ -90,4 +91,14 @@ QtObject {
     // --- Clock ---
     property string clockCornerPosition: Config.sAdapter.clock.position
     property string clockSlideDirection: Config.sAdapter.clock.slideDirection
+
+    // --- Wallpaper ---
+    readonly property string wallpaperDirectory: {
+        var dir = Config.sAdapter.wallpaper.directory || "~/Pictures/Wallpapers";
+        return dir.replace(/^~/, Quickshell.env("HOME") || "");
+    }
+    readonly property string wallpaperPath: {
+        var p = Config.sAdapter.wallpaper.path || "";
+        return p.replace(/^~/, Quickshell.env("HOME") || "");
+    }
 }

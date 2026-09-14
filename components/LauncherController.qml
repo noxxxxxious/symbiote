@@ -15,6 +15,7 @@ QtObject {
     }
 
     function openOn(screen) {
+        SettingsController.close();
         activeScreen = screen.name;
     }
 
@@ -23,9 +24,10 @@ QtObject {
     }
 
     function toggleOn(screen) {
-        activeScreen = (activeScreen === screen.name) ? "" : screen.name;
-        console.log("toggleOn called, activeScreen now:", activeScreen)
+        if (isOpenOn(screen)) {
+            close();
+        } else {
+            openOn(screen);
+        }
     }
-
-    onActiveScreenChanged: console.log("activeScreen changed to:", activeScreen)
 }

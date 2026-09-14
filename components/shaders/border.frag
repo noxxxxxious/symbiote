@@ -13,6 +13,19 @@ layout(std140, binding = 0) uniform buf {
     float smoothing;
     vec4 borderColor;
 
+    // --- Organic inner border ---
+    float organicBorderEnabledF;
+    float organicBorderAmplitude;
+    float organicBorderFrequency;
+    float organicBorderAnimationSpeed;
+    float organicBorderSeed;
+    float organicBorderTime;
+    float organicBorderPeakSharpness;
+    float organicBorderValleySharpness;
+    float organicBorderAnimatedF;
+    float organicBorderMorphSpeed;
+    float organicBorderAmplitudeRange;
+
     // --- Dedicated Launcher geometry ---
     vec2 launcherPos;
     vec2 launcherSize;
@@ -181,14 +194,11 @@ float sdRoundBox(vec2 p, vec2 b, float r) {
     return min(max(q.x, q.y), 0.0) + length(max(q, 0.0)) - r;
 }
 
-// Per-corner rounded box: r.x = TL, r.y = TR, r.z = BR, r.w = BL
 float sdRoundBox4(vec2 p, vec2 b, vec4 r) {
     float maxR = min(b.x, b.y);
     r = clamp(r, 0.0, maxR);
-
     r.xy = (p.x > 0.0) ? r.yz : r.xw;
     float rad = (p.y > 0.0) ? r.y : r.x;
-
     vec2 q = abs(p) - b + rad;
     return min(max(q.x, q.y), 0.0) + length(max(q, 0.0)) - rad;
 }
@@ -202,9 +212,8 @@ float tendrilRadiusProfile(float t, float rootR, float waistR, float panelR, flo
     float linear1 = mix(rootR, waistR, clamp(t / 0.5, 0.0, 1.0));
     float linear2 = mix(waistR, panelR, clamp((t - 0.5) / 0.5, 0.0, 1.0));
 
-    if (hw <= 1e-5) {
+    if (hw <= 1e-5)
         return t < 0.5 ? linear1 : linear2;
-    }
 
     float lo = 0.5 - hw;
     float hi = 0.5 + hw;
@@ -226,10 +235,8 @@ float sdTendril(vec2 p, vec2 root, vec2 tip, float rootR, float waistR, float pa
     float baLen2 = max(dot(ba, ba), 1e-4);
     float baLen = sqrt(baLen2);
     float t = clamp(dot(pa, ba) / baLen2, 0.0, 1.0);
-
     float hw = clamp(waistSmoothingPx / max(baLen, 1e-4), 0.0, 0.5);
     float radius = tendrilRadiusProfile(t, rootR, waistR, panelR, hw);
-
     vec2 closest = root + ba * t;
     return length(p - closest) - radius;
 }
@@ -239,28 +246,22 @@ float addTendril(float scene, vec2 px, vec4 pos, vec4 thick, vec2 blendK, float 
     float rootR = thick.x * act;
     float waistR = thick.y * act;
     float panelR = thick.z * act;
-
     vec2 root = pos.xy;
     vec2 tip = pos.zw;
-
     float raw = sdTendril(px, root, tip, rootR, waistR, panelR, waistSmoothing);
-
     float gate = smoothstep(0.0, 0.02, act);
     float tendrilSDF = mix(1.0e4, raw, gate);
-
     vec2 ba = tip - root;
     float h = clamp(dot(px - root, ba) / max(dot(ba, ba), 1e-4), 0.0, 1.0);
-    float k = mix(blendK.x, blendK.y, h);
-    k = max(k * act, 0.001);
-
+    float k = max(mix(blendK.x, blendK.y, h) * act, 0.001);
     return smin(scene, tendrilSDF, k);
 }
 
-// A tendril tip connects to the clock if it's near the clock's bounds:
 bool isClockTendril(vec2 tip) {
     vec2 cMin = clockPos - vec2(10.0);
     vec2 cMax = clockPos + clockSize + vec2(10.0);
-    return (tip.x >= cMin.x && tip.x <= cMax.x && tip.y >= cMin.y && tip.y <= cMax.y);
+    return tip.x >= cMin.x && tip.x <= cMax.x
+        && tip.y >= cMin.y && tip.y <= cMax.y;
 }
 
 float addTendrilAuto(float scene, vec2 px, vec4 pos, vec4 thick) {
@@ -270,35 +271,426 @@ float addTendrilAuto(float scene, vec2 px, vec4 pos, vec4 thick) {
     return addTendril(scene, px, pos, thick, blendK, waist);
 }
 
+const float PI = 3.14159265358979323846;
+const float TAU = 6.28318530717958647692;
+
+float roundedRectPerimeterLength(
+    vec2 screenSize,
+    float inset,
+    float requestedRadius
+) {
+    float w = max(screenSize.x - 2.0 * inset, 1.0);
+    float h = max(screenSize.y - 2.0 * inset, 1.0);
+    float r = clamp(requestedRadius, 0.0, min(w, h) * 0.5);
+
+    float straightW = max(w - 2.0 * r, 0.0);
+    float straightH = max(h - 2.0 * r, 0.0);
+    float quarterArc = PI * 0.5 * r;
+
+    return 2.0 * straightW
+         + 2.0 * straightH
+         + 4.0 * quarterArc;
+}
+
+// Returns a clockwise perimeter distance.
+//
+// Start: the top point of the top-left rounded corner.
+// Direction: top -> top-right arc -> right -> bottom-right arc -> bottom
+//            -> bottom-left arc -> left -> top-left arc.
+//
+// Critically, each straight segment and its neighboring arc use the same
+// accumulated distance at their shared endpoint.
+float roundedRectPerimeterCoordinate(
+    vec2 px,
+    vec2 screenSize,
+    float inset,
+    float requestedRadius
+) {
+    float x0 = inset;
+    float y0 = inset;
+    float x1 = screenSize.x - inset;
+    float y1 = screenSize.y - inset;
+
+    float w = max(x1 - x0, 1.0);
+    float h = max(y1 - y0, 1.0);
+    float r = clamp(requestedRadius, 0.0, min(w, h) * 0.5);
+
+    float straightW = max(w - 2.0 * r, 0.0);
+    float straightH = max(h - 2.0 * r, 0.0);
+    float arc = PI * 0.5 * r;
+
+    // We only need a stable mapping close to the visible rounded boundary.
+    // Clamping prevents samples outside the cavity bounds from producing
+    // nonsensical accumulated distances.
+    vec2 p = clamp(px, vec2(x0, y0), vec2(x1, y1));
+
+    bool left = p.x < x0 + r;
+    bool right = p.x > x1 - r;
+    bool top = p.y < y0 + r;
+    bool bottom = p.y > y1 - r;
+
+    // -------------------------------------------------------------------------
+    // Corners first. They must be checked before generic side strips.
+    // -------------------------------------------------------------------------
+
+    // Top-left arc:
+    // angle -PI/2 at its top endpoint -> s = 0
+    // angle -PI at its left endpoint -> s = arc
+    if (left && top) {
+        vec2 center = vec2(x0 + r, y0 + r);
+        vec2 delta = p - center;
+        float angle = atan(delta.y, delta.x);
+        angle = clamp(angle, -PI, -PI * 0.5);
+
+        float t = (-PI * 0.5 - angle) / (PI * 0.5);
+        return arc * t;
+    }
+
+    // Top-right arc:
+    // angle -PI/2 at top endpoint -> s = arc + straightW
+    // angle 0 at right endpoint -> s = arc + straightW + arc
+    if (right && top) {
+        vec2 center = vec2(x1 - r, y0 + r);
+        vec2 delta = p - center;
+        float angle = atan(delta.y, delta.x);
+        angle = clamp(angle, -PI * 0.5, 0.0);
+
+        float t = (angle + PI * 0.5) / (PI * 0.5);
+        return arc + straightW + arc * t;
+    }
+
+    // Bottom-right arc:
+    // angle 0 at right endpoint -> s = 2*arc + straightW + straightH
+    // angle PI/2 at bottom endpoint -> s = 3*arc + straightW + straightH
+    if (right && bottom) {
+        vec2 center = vec2(x1 - r, y1 - r);
+        vec2 delta = p - center;
+        float angle = atan(delta.y, delta.x);
+        angle = clamp(angle, 0.0, PI * 0.5);
+
+        float t = angle / (PI * 0.5);
+        return arc + straightW + arc + straightH + arc * t;
+    }
+
+    // Bottom-left arc:
+    // angle PI/2 at bottom endpoint -> s = 3*arc + 2*straightW + straightH
+    // angle PI at left endpoint -> s = 4*arc + 2*straightW + straightH
+    if (left && bottom) {
+        vec2 center = vec2(x0 + r, y1 - r);
+        vec2 delta = p - center;
+        float angle = atan(delta.y, delta.x);
+
+        // atan returns [-PI, PI]. Bottom-left's arc uses [PI/2, PI].
+        if (angle < 0.0)
+            angle += TAU;
+
+        angle = clamp(angle, PI * 0.5, PI);
+
+        float t = (angle - PI * 0.5) / (PI * 0.5);
+        return arc + straightW + arc + straightH + arc + straightW
+             + arc * t;
+    }
+
+    // -------------------------------------------------------------------------
+    // Straight sections after all corners.
+    // -------------------------------------------------------------------------
+
+    // Top edge: left to right.
+    if (top) {
+        return arc + clamp(p.x - (x0 + r), 0.0, straightW);
+    }
+
+    // Right edge: top to bottom.
+    if (right) {
+        return arc + straightW + arc
+             + clamp(p.y - (y0 + r), 0.0, straightH);
+    }
+
+    // Bottom edge: right to left.
+    if (bottom) {
+        return arc + straightW + arc + straightH + arc
+             + clamp((x1 - r) - p.x, 0.0, straightW);
+    }
+
+    // Left edge: bottom to top.
+    return arc + straightW + arc + straightH + arc + straightW + arc
+         + clamp((y1 - r) - p.y, 0.0, straightH);
+}
+
+float harmonicBorderWave(
+    float phase,
+    float travelTime,
+    float seed
+) {
+    float wave1 = sin(
+        phase * 5.0
+        + travelTime
+        + seed * 0.41
+    );
+
+    float wave2 = sin(
+        phase * 8.0
+        - travelTime * 1.37
+        + seed * 1.73
+        + 1.90
+    );
+
+    float wave3 = sin(
+        phase * 13.0
+        + travelTime * 0.71
+        + seed * 2.31
+        + 4.20
+    );
+
+    return wave1 * 0.68
+         + wave2 * 0.23
+         + wave3 * 0.09;
+}
+
+float organicBorderDisplacement(vec2 px, vec2 screenSize) {
+    if (organicBorderEnabledF < 0.5)
+        return 0.0;
+
+    float animateWeight = step(0.5, organicBorderAnimatedF);
+
+    // -------------------------------------------------------------------------
+    // Closed rounded-rectangle perimeter coordinate
+    // -------------------------------------------------------------------------
+    float perimeter = roundedRectPerimeterLength(
+        screenSize,
+        thickness,
+        rounding
+    );
+
+    float s = roundedRectPerimeterCoordinate(
+        px,
+        screenSize,
+        thickness,
+        rounding
+    );
+
+    float safePerimeter = max(perimeter, 1.0);
+    float wrappedS = fract(s / safePerimeter) * safePerimeter;
+
+    // -------------------------------------------------------------------------
+    // Timing
+    //
+    // Main travel: uses the configured speed directly, with the existing
+    // 0.25 scaling so your working 0–5 UI range remains sensible.
+    // -------------------------------------------------------------------------
+    float morphTime = organicBorderTime
+                    * max(organicBorderMorphSpeed, 0.0)
+                    * animateWeight;
+
+    float travelTime = organicBorderTime
+                     * max(organicBorderAnimationSpeed, 0.0)
+                     * 0.25;
+
+    // Slow variation in travel rate. It cannot reverse movement because its
+    // multiplier remains within [0.82, 1.18].
+    float speedEnvelope = 1.0 + 0.18 * sin(
+        morphTime * 0.41 + organicBorderSeed * 0.83
+    );
+
+    travelTime *= speedEnvelope;
+
+    // -------------------------------------------------------------------------
+    // Amplitude breathing
+    //
+    // When animated is false, the amplitude remains exactly at its configured
+    // baseline. When true, it changes smoothly, but never goes below 65% of
+    // the baseline so the border cannot become flat.
+    // -------------------------------------------------------------------------
+    float baseAmplitude = max(organicBorderAmplitude, 0.001);
+
+    float amplitudeRange = clamp(
+        organicBorderAmplitudeRange,
+        0.0,
+        baseAmplitude * 0.35
+    );
+
+    float amplitudeEnvelope = sin(
+        morphTime * 0.57 + organicBorderSeed * 2.11
+    );
+
+    float effectiveAmplitude = baseAmplitude;
+
+    if (animateWeight > 0.5) {
+        effectiveAmplitude = max(
+            baseAmplitude * 0.65,
+            baseAmplitude + amplitudeEnvelope * amplitudeRange
+        );
+    }
+
+    // -------------------------------------------------------------------------
+    // Closed harmonic field
+    // -------------------------------------------------------------------------
+    float normalPhase = wrappedS / safePerimeter * TAU;
+
+    float shape = harmonicBorderWave(
+        normalPhase,
+        travelTime,
+        organicBorderSeed
+    );
+
+    // -------------------------------------------------------------------------
+    // Top-left loop-seam stabilization
+    //
+    // `s = 0` and `s = perimeter` describe the exact same physical point.
+    // The waveform itself is periodic; this small band smooths over minor
+    // numerical/branch differences in the perimeter-coordinate helper.
+    // -------------------------------------------------------------------------
+    float seamWidth = max(rounding * 0.75, 12.0);
+    float seamDistance = min(wrappedS, safePerimeter - wrappedS);
+
+    if (seamDistance < seamWidth) {
+        float seamValue = harmonicBorderWave(
+            0.0,
+            travelTime,
+            organicBorderSeed
+        );
+
+        float seamT = smoothstep(0.0, seamWidth, seamDistance);
+        shape = mix(seamValue, shape, seamT);
+    }
+
+    // -------------------------------------------------------------------------
+    // Static peak / valley shaping
+    // -------------------------------------------------------------------------
+    float peakPower = clamp(organicBorderPeakSharpness, 0.80, 1.30);
+    float valleyPower = clamp(organicBorderValleySharpness, 0.80, 1.30);
+
+    if (shape >= 0.0)
+        shape = pow(shape, peakPower);
+    else
+        shape = -pow(-shape, valleyPower);
+
+    return shape * effectiveAmplitude;
+}
+
+// Returns 0.0 at an active tendril root and transitions smoothly to 1.0
+// away from it. The organic cutout displacement is multiplied by this,
+// creating a stable, smooth landing zone for each root.
+float tendrilRootOrganicMask(vec2 px, vec4 pos, vec4 thick) {
+    float activation = clamp(thick.w, 0.0, 1.0);
+
+    // Ignore inactive slots.
+    if (activation < 0.001)
+        return 1.0;
+
+    vec2 root = pos.xy;
+
+    // This should be wider than the physical root and wider than its smooth
+    // union radius, so the wave has enough room to settle before the merge.
+    float rootRadius = max(thick.x * activation, 1.0);
+    float protectRadius = rootRadius * 3.0 + 18.0;
+    float fadeWidth = max(rootRadius * 1.5, 12.0);
+
+    float distanceToRoot = length(px - root);
+
+    return smoothstep(
+        protectRadius - fadeWidth,
+        protectRadius + fadeWidth,
+        distanceToRoot
+    );
+}
+
 void main() {
     vec2 px = qt_TexCoord0 * size;
     vec2 p = px - size * 0.5;
 
-    // 1. Screen edge frame
     float outerSDF = sdRoundBox(p, size * 0.5, 0.0);
     vec2 innerHalf = size * 0.5 - vec2(thickness);
     float innerSDF = sdRoundBox(p, innerHalf, rounding);
-    float ringSDF = max(outerSDF, -innerSDF);
 
-    // 2. Launcher panel SDF
+    float rootMask = 1.0;
+
+    // ==== Generated by gen_tendril_uniforms.py 64 (root mask pass) ====
+    rootMask = min(rootMask, tendrilRootOrganicMask(px, tendril0Pos, tendril0Thick));
+    rootMask = min(rootMask, tendrilRootOrganicMask(px, tendril1Pos, tendril1Thick));
+    rootMask = min(rootMask, tendrilRootOrganicMask(px, tendril2Pos, tendril2Thick));
+    rootMask = min(rootMask, tendrilRootOrganicMask(px, tendril3Pos, tendril3Thick));
+    rootMask = min(rootMask, tendrilRootOrganicMask(px, tendril4Pos, tendril4Thick));
+    rootMask = min(rootMask, tendrilRootOrganicMask(px, tendril5Pos, tendril5Thick));
+    rootMask = min(rootMask, tendrilRootOrganicMask(px, tendril6Pos, tendril6Thick));
+    rootMask = min(rootMask, tendrilRootOrganicMask(px, tendril7Pos, tendril7Thick));
+    rootMask = min(rootMask, tendrilRootOrganicMask(px, tendril8Pos, tendril8Thick));
+    rootMask = min(rootMask, tendrilRootOrganicMask(px, tendril9Pos, tendril9Thick));
+    rootMask = min(rootMask, tendrilRootOrganicMask(px, tendril10Pos, tendril10Thick));
+    rootMask = min(rootMask, tendrilRootOrganicMask(px, tendril11Pos, tendril11Thick));
+    rootMask = min(rootMask, tendrilRootOrganicMask(px, tendril12Pos, tendril12Thick));
+    rootMask = min(rootMask, tendrilRootOrganicMask(px, tendril13Pos, tendril13Thick));
+    rootMask = min(rootMask, tendrilRootOrganicMask(px, tendril14Pos, tendril14Thick));
+    rootMask = min(rootMask, tendrilRootOrganicMask(px, tendril15Pos, tendril15Thick));
+    rootMask = min(rootMask, tendrilRootOrganicMask(px, tendril16Pos, tendril16Thick));
+    rootMask = min(rootMask, tendrilRootOrganicMask(px, tendril17Pos, tendril17Thick));
+    rootMask = min(rootMask, tendrilRootOrganicMask(px, tendril18Pos, tendril18Thick));
+    rootMask = min(rootMask, tendrilRootOrganicMask(px, tendril19Pos, tendril19Thick));
+    rootMask = min(rootMask, tendrilRootOrganicMask(px, tendril20Pos, tendril20Thick));
+    rootMask = min(rootMask, tendrilRootOrganicMask(px, tendril21Pos, tendril21Thick));
+    rootMask = min(rootMask, tendrilRootOrganicMask(px, tendril22Pos, tendril22Thick));
+    rootMask = min(rootMask, tendrilRootOrganicMask(px, tendril23Pos, tendril23Thick));
+    rootMask = min(rootMask, tendrilRootOrganicMask(px, tendril24Pos, tendril24Thick));
+    rootMask = min(rootMask, tendrilRootOrganicMask(px, tendril25Pos, tendril25Thick));
+    rootMask = min(rootMask, tendrilRootOrganicMask(px, tendril26Pos, tendril26Thick));
+    rootMask = min(rootMask, tendrilRootOrganicMask(px, tendril27Pos, tendril27Thick));
+    rootMask = min(rootMask, tendrilRootOrganicMask(px, tendril28Pos, tendril28Thick));
+    rootMask = min(rootMask, tendrilRootOrganicMask(px, tendril29Pos, tendril29Thick));
+    rootMask = min(rootMask, tendrilRootOrganicMask(px, tendril30Pos, tendril30Thick));
+    rootMask = min(rootMask, tendrilRootOrganicMask(px, tendril31Pos, tendril31Thick));
+    rootMask = min(rootMask, tendrilRootOrganicMask(px, tendril32Pos, tendril32Thick));
+    rootMask = min(rootMask, tendrilRootOrganicMask(px, tendril33Pos, tendril33Thick));
+    rootMask = min(rootMask, tendrilRootOrganicMask(px, tendril34Pos, tendril34Thick));
+    rootMask = min(rootMask, tendrilRootOrganicMask(px, tendril35Pos, tendril35Thick));
+    rootMask = min(rootMask, tendrilRootOrganicMask(px, tendril36Pos, tendril36Thick));
+    rootMask = min(rootMask, tendrilRootOrganicMask(px, tendril37Pos, tendril37Thick));
+    rootMask = min(rootMask, tendrilRootOrganicMask(px, tendril38Pos, tendril38Thick));
+    rootMask = min(rootMask, tendrilRootOrganicMask(px, tendril39Pos, tendril39Thick));
+    rootMask = min(rootMask, tendrilRootOrganicMask(px, tendril40Pos, tendril40Thick));
+    rootMask = min(rootMask, tendrilRootOrganicMask(px, tendril41Pos, tendril41Thick));
+    rootMask = min(rootMask, tendrilRootOrganicMask(px, tendril42Pos, tendril42Thick));
+    rootMask = min(rootMask, tendrilRootOrganicMask(px, tendril43Pos, tendril43Thick));
+    rootMask = min(rootMask, tendrilRootOrganicMask(px, tendril44Pos, tendril44Thick));
+    rootMask = min(rootMask, tendrilRootOrganicMask(px, tendril45Pos, tendril45Thick));
+    rootMask = min(rootMask, tendrilRootOrganicMask(px, tendril46Pos, tendril46Thick));
+    rootMask = min(rootMask, tendrilRootOrganicMask(px, tendril47Pos, tendril47Thick));
+    rootMask = min(rootMask, tendrilRootOrganicMask(px, tendril48Pos, tendril48Thick));
+    rootMask = min(rootMask, tendrilRootOrganicMask(px, tendril49Pos, tendril49Thick));
+    rootMask = min(rootMask, tendrilRootOrganicMask(px, tendril50Pos, tendril50Thick));
+    rootMask = min(rootMask, tendrilRootOrganicMask(px, tendril51Pos, tendril51Thick));
+    rootMask = min(rootMask, tendrilRootOrganicMask(px, tendril52Pos, tendril52Thick));
+    rootMask = min(rootMask, tendrilRootOrganicMask(px, tendril53Pos, tendril53Thick));
+    rootMask = min(rootMask, tendrilRootOrganicMask(px, tendril54Pos, tendril54Thick));
+    rootMask = min(rootMask, tendrilRootOrganicMask(px, tendril55Pos, tendril55Thick));
+    rootMask = min(rootMask, tendrilRootOrganicMask(px, tendril56Pos, tendril56Thick));
+    rootMask = min(rootMask, tendrilRootOrganicMask(px, tendril57Pos, tendril57Thick));
+    rootMask = min(rootMask, tendrilRootOrganicMask(px, tendril58Pos, tendril58Thick));
+    rootMask = min(rootMask, tendrilRootOrganicMask(px, tendril59Pos, tendril59Thick));
+    rootMask = min(rootMask, tendrilRootOrganicMask(px, tendril60Pos, tendril60Thick));
+    rootMask = min(rootMask, tendrilRootOrganicMask(px, tendril61Pos, tendril61Thick));
+    rootMask = min(rootMask, tendrilRootOrganicMask(px, tendril62Pos, tendril62Thick));
+    rootMask = min(rootMask, tendrilRootOrganicMask(px, tendril63Pos, tendril63Thick));
+    // ==== end generated ====
+
+    float organicOffset = organicBorderDisplacement(px, size) * rootMask;
+    float organicInnerSDF = innerSDF + organicOffset;
+    float ringSDF = max(outerSDF, -organicInnerSDF);
+
     float launcherSDF = 1.0e4;
     if (launcherSize.x > 1.0 && launcherSize.y > 1.0) {
         vec2 launcherCenter = launcherPos + launcherSize * 0.5;
         launcherSDF = sdRoundBox(px - launcherCenter, launcherSize * 0.5, launcherRounding);
     }
 
-    // 3. Clock panel SDF with per-corner radii
     float clockSDF = 1.0e4;
     if (clockSize.x > 1.0 && clockSize.y > 1.0) {
         vec2 clockCenter = clockPos + clockSize * 0.5;
         clockSDF = sdRoundBox4(px - clockCenter, clockSize * 0.5, clockRounding);
     }
 
-    // 4. Combine both panels into scene
     float panelsSDF = min(launcherSDF, clockSDF);
-
     float scene = min(ringSDF, panelsSDF);
-    float featureSDF = min(-innerSDF, panelsSDF);
+    float featureSDF = min(-organicInnerSDF, panelsSDF);
 
     // ==== Generated by gen_tendril_uniforms.py 64 (scene pass) ====
     scene = addTendrilAuto(scene, px, tendril0Pos, tendril0Thick);
@@ -441,7 +833,7 @@ void main() {
         float insideDist = max(-featureSDF, 0.0);
         float t = 1.0 - clamp(insideDist / max(innerEdgeFalloff, 0.001), 0.0, 1.0);
         fillRGB = mix(borderColor.rgb, innerEdgeColor.rgb,
-                       t * innerEdgeIntensity * innerEdgeColor.a);
+                      t * innerEdgeIntensity * innerEdgeColor.a);
     }
 
     vec3 fillPremul = fillRGB * alpha;
@@ -452,7 +844,6 @@ void main() {
         float d = max(scene, 0.0);
         float shadowMask = exp(-d / max(shadowFalloff, 0.001)) * shadowOpacity;
         float shadowA = shadowMask * shadowColor.a;
-
         outRGB = fillPremul + shadowColor.rgb * shadowA * (1.0 - alpha);
         outA = alpha + shadowA * (1.0 - alpha);
     }

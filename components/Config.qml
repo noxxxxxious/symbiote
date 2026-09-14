@@ -91,5 +91,28 @@ FileView {
             property list<real> panelThicknessRange: [2, 3]
             property list<real> waistThicknessRange: [1, 1]
         }
+
+        property JsonObject wallpaper: JsonObject {
+            property string directory: "~/Pictures/Wallpapers"
+            property string path: ""
+        }
+
+        property JsonObject organicBorder: JsonObject {
+            property bool enabled: false
+            property string style: "harmonic"
+
+            property real amplitude: 6.0
+            property real frequency: 0.018
+
+            property real animationSpeed: 1.0
+            property real seed: 17.0
+
+            property bool animated: false
+            property real morphSpeed: 0.20
+            property real amplitudeRange: 2.0
+
+            property real peakSharpness: 1.0
+            property real valleySharpness: 1.0
+        }
     }
 }

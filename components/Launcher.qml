@@ -194,10 +194,47 @@ Item {
                     color: Theme.textColorAccent
                     font.pixelSize: 20
                     background: null
+
                     Keys.onEscapePressed: LauncherController.close()
+
+                    // Down arrow navigation
+                    Keys.onDownPressed: {
+                        if (resultsList.count > 0) {
+                            resultsList.currentIndex = Math.min(resultsList.count - 1, resultsList.currentIndex + 1);
+                        }
+                    }
+
+                    // Up arrow navigation
+                    Keys.onUpPressed: {
+                        if (resultsList.count > 0) {
+                            resultsList.currentIndex = Math.max(0, resultsList.currentIndex - 1);
+                        }
+                    }
+
+                    // Enter / Return launches selected app
                     Keys.onReturnPressed: {
-                        if (launcher.filteredApps.length > 0)
+                        if (resultsList.currentIndex >= 0 && resultsList.currentIndex < launcher.filteredApps.length) {
+                            launcher.launchApp(launcher.filteredApps[resultsList.currentIndex]);
+                        } else if (launcher.filteredApps.length > 0) {
                             launcher.launchApp(launcher.filteredApps[0]);
+                        }
+                    }
+
+                    // Vim navigation: Ctrl+N (Next / Down) and Ctrl+P (Prev / Up)
+                    Keys.onPressed: function(event) {
+                        if (event.modifiers & Qt.ControlModifier) {
+                            if (event.key === Qt.Key_N) {
+                                if (resultsList.count > 0) {
+                                    resultsList.currentIndex = Math.min(resultsList.count - 1, resultsList.currentIndex + 1);
+                                }
+                                event.accepted = true;
+                            } else if (event.key === Qt.Key_P) {
+                                if (resultsList.count > 0) {
+                                    resultsList.currentIndex = Math.max(0, resultsList.currentIndex - 1);
+                                }
+                                event.accepted = true;
+                            }
+                        }
                     }
                 }
 
@@ -236,13 +273,27 @@ Item {
                     clip: true
                     model: launcher.filteredApps
 
+                    // Reset selection to the first item whenever results refresh
+                    onModelChanged: currentIndex = 0
+
+                    // Keep the highlighted row scrolled into view as you navigate
+                    onCurrentIndexChanged: {
+                        if (currentIndex >= 0)
+                            positionViewAtIndex(currentIndex, ListView.Contain);
+                    }
+
                     delegate: Rectangle {
                         id: delegateRoot
                         required property var modelData
+                        required property int index
+
                         width: resultsList.width
                         height: 48
                         radius: 8
-                        color: rowMouse.containsMouse ? "#33ffffff" : "transparent"
+
+                        // Highlight if hovered OR if currently selected via keyboard
+                        readonly property bool isSelected: index === resultsList.currentIndex
+                        color: (isSelected || rowMouse.containsMouse) ? "#33ffffff" : "transparent"
 
                         Row {
                             anchors.fill: parent
@@ -263,8 +314,9 @@ Item {
 
                                 Text {
                                     text: delegateRoot.modelData.name
-                                    color: "white"
+                                    color: delegateRoot.isSelected ? Theme.textColorAccent : "white"
                                     font.pixelSize: 15
+                                    font.bold: delegateRoot.isSelected
                                 }
 
                                 Text {
@@ -280,6 +332,7 @@ Item {
                             id: rowMouse
                             anchors.fill: parent
                             hoverEnabled: true
+                            onEntered: resultsList.currentIndex = delegateRoot.index
                             onClicked: launcher.launchApp(delegateRoot.modelData)
                         }
                     }

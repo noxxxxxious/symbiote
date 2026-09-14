@@ -25,7 +25,7 @@
         "amplitudeRange": 8,
         "animated": true,
         "animationSpeed": 9,
-        "enabled": true,
+        "enabled": false,
         "frequency": 0.076,
         "morphSpeed": 0.024,
         "peakSharpness": 4,

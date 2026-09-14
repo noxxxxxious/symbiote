@@ -16,6 +16,53 @@ ShaderEffect {
         Theme.borderColor.a * Theme.borderOpacity
     )
 
+    // --- Organic inner border ---
+    property real organicBorderEnabledF:
+        Config.sAdapter.organicBorder.enabled ? 1.0 : 0.0
+
+    property real organicBorderAmplitude:
+        Config.sAdapter.organicBorder.amplitude
+
+    property real organicBorderFrequency:
+        Config.sAdapter.organicBorder.frequency
+
+    property real organicBorderPeakSharpness:
+        Config.sAdapter.organicBorder.peakSharpness
+
+    property real organicBorderValleySharpness:
+        Config.sAdapter.organicBorder.valleySharpness
+
+    property real organicBorderAnimationSpeed:
+        Config.sAdapter.organicBorder.animationSpeed
+
+    property real organicBorderSeed:
+        Config.sAdapter.organicBorder.seed
+
+    // --- Organic-border parameter morphing ---
+    property real organicBorderAnimatedF:
+        Config.sAdapter.organicBorder.animated ? 1.0 : 0.0
+
+    property real organicBorderMorphSpeed:
+        Config.sAdapter.organicBorder.morphSpeed
+
+    property real organicBorderAmplitudeRange:
+        Config.sAdapter.organicBorder.amplitudeRange
+
+    property real organicBorderTime: 0.0
+
+    Timer {
+        id: organicBorderClock
+        interval: 16
+        repeat: true
+        running: root.organicBorderEnabledF > 0.5
+                 && (root.organicBorderAnimationSpeed > 0.0
+                     || root.organicBorderAnimatedF > 0.5)
+
+        onTriggered: {
+            root.organicBorderTime += interval / 1000.0;
+        }
+    }
+
     // --- Legacy / Active Panel compatibility ---
     property real panelX: launcherWidth > 0 ? launcherX : (clockWidth > 0 ? clockX : -100000)
     property real panelY: launcherHeight > 0 ? launcherY : (clockHeight > 0 ? clockY : -100000)
