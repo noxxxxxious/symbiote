@@ -33,6 +33,10 @@ Item {
 
     property real tendrilGrowSpeedOverride: 0.25
     property real tendrilShrinkSpeedOverride: 0.12
+    // Wait for the panel to have meaningful geometry before sampling its
+    // perimeter; otherwise early samples can immediately exceed max length as
+    // the panel grows.
+    property real tendrilActivationFraction: 0.25
 
     property int tendrilMaxCorners: 4
 

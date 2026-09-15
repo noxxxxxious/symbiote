@@ -34,6 +34,7 @@ Item {
 
     property real tendrilGrowSpeedOverride: 0.25
     property real tendrilShrinkSpeedOverride: 0.12
+    property real tendrilActivationFraction: 0.25
 
     property int tendrilMaxTop: 6
     property int tendrilMaxRight: 4

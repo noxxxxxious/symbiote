@@ -93,6 +93,8 @@ ShellRoot {
                     screenWidth: screenRoot.width
                     screenHeight: screenRoot.height
                     enabled: launcherPanel.isOpen
+                        && launcherPanel.width >= launcherPanel.finalWidth * launcherPanel.tendrilActivationFraction
+                        && launcherPanel.height >= launcherPanel.finalHeight * launcherPanel.tendrilActivationFraction
                 }
 
                 TendrilManager {
@@ -125,6 +127,8 @@ ShellRoot {
                     screenWidth: screenRoot.width
                     screenHeight: screenRoot.height
                     enabled: settingsPanel.isOpen
+                        && settingsPanel.width >= settingsPanel.finalWidth * settingsPanel.tendrilActivationFraction
+                        && settingsPanel.height >= settingsPanel.finalHeight * settingsPanel.tendrilActivationFraction
                 }
 
                 // -------------------------------------------------------------

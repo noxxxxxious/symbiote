@@ -9,6 +9,10 @@ QtObject {
     property bool enabled: true
     property bool prevEnabled: false
     property int debugCounter: 0
+    // Rotate the evenly spaced perimeter samples between activation cycles.
+    // A fixed half-step places a repeatable surplus on one side for many panel
+    // aspect ratios (especially the launcher/settings dimensions).
+    property real perimeterPhase: Math.random()
 
     property real screenWidth: 0
     property real screenHeight: 0
@@ -107,8 +111,10 @@ QtObject {
 
     onEnabledChanged: {
         needsUpdate = true;
-        if (enabled && !prevEnabled)
+        if (enabled && !prevEnabled) {
+            perimeterPhase = Math.random();
             initSlots();
+        }
 
         if (!enabled) fading = slots.some(function(slot) { return slot.activation > 0.001; });
         prevEnabled = enabled;
@@ -172,7 +178,7 @@ QtObject {
         var pts = [];
 
         for (var i = 0; i < count; i++) {
-            var distance = (i + 0.5) / count * total;
+                var distance = (i + manager.perimeterPhase) / count * total;
             var acc = 0;
             var found = null;
 
