@@ -12,6 +12,7 @@ QtObject {
     function isOpenOn(screen) { return activeScreen && screen && activeScreen.name === screen.name }
 
     function openOn(screen) {
+        PowerMenuController.close()
         LauncherController.close()
         activeScreen = screen
     }

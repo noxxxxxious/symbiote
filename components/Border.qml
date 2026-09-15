@@ -34,6 +34,15 @@ ShaderEffect {
     property real traySpikeSharpness: spikeSharpness(Config.sAdapter.tray)
     property real trayMenuSpikeSharpness: spikeSharpness(Config.sAdapter.trayMenu)
 
+    property vector4d powerRect0: Qt.vector4d(0, 0, 0, 0)
+    property vector4d powerRect1: Qt.vector4d(0, 0, 0, 0)
+    property vector4d powerRect2: Qt.vector4d(0, 0, 0, 0)
+    property vector4d powerRect3: Qt.vector4d(0, 0, 0, 0)
+    property vector4d powerRect4: Qt.vector4d(0, 0, 0, 0)
+    property vector4d powerSpikes: spikeProfile(Config.sAdapter.powerMenu)
+    property real powerSpikeSharpness: spikeSharpness(Config.sAdapter.powerMenu)
+    property var powerSlots: []
+
     // --- Organic inner border ---
     property real organicBorderEnabledF:
         Config.sAdapter.organicBorder.enabled ? 1.0 : 0.0
@@ -166,46 +175,27 @@ ShaderEffect {
 
     function visibleSlots() {
         var list = [];
-
-        // 1. Gather from launcher
-        var lSrc = launcherSlots || [];
-        for (var i = 0; i < lSrc.length; i++) {
-            if (lSrc[i] && lSrc[i].activation > 0.001)
-                list.push(lSrc[i]);
-        }
-
-        // 2. Gather from clock
-        var cSrc = clockSlots || [];
-        for (var j = 0; j < cSrc.length; j++) {
-            if (cSrc[j] && cSrc[j].activation > 0.001)
-                list.push(cSrc[j]);
-        }
-
-                // Gather from tray
-        var tSrc = traySlots
-        if (tSrc) {
-            for (var k = 0; k < tSrc.length; k++) {
-                if (tSrc[k] && tSrc[k].activation > 0.001) list.push(tSrc[k])
+        function collect(source, profile) {
+            for (var i = 0; i < source.length; ++i) {
+                var slot = source[i];
+                if (slot && slot.activation > 0.001) list.push({slot: slot, profile: profile});
             }
         }
 
-        // 4. Gather from tray menu
-        var tmSrc = trayMenuSlots || [];
-        for (var m = 0; m < tmSrc.length; m++) {
-            if (tmSrc[m] && tmSrc[m].activation > 0.001)
-                list.push(tmSrc[m]);
-        }
-
-        // 5. Fallback to raw tendrilSlots if passed directly
-        if (list.length === 0 && tendrilSlots && tendrilSlots.length > 0) {
-            for (var k = 0; k < tendrilSlots.length; k++) {
-                if (tendrilSlots[k] && tendrilSlots[k].activation > 0.001)
-                    list.push(tendrilSlots[k]);
-            }
-        }
-
-        list.sort(function(a, b) { return b.activation - a.activation; });
-        return list;
+        var power = [];
+        var pSrc = powerSlots || [];
+        for (var p = 0; p < pSrc.length; ++p)
+            if (pSrc[p] && pSrc[p].activation > 0.001)
+                power.push({slot: pSrc[p], profile: Qt.vector4d(40, 24, 60, 0)});
+        collect(launcherSlots || [], Qt.vector4d(launcherTendrilBlend.x, launcherTendrilBlend.y, launcherWaistSmoothing, 0));
+        collect(clockSlots || [], Qt.vector4d(clockTendrilBlend.x, clockTendrilBlend.y, clockWaistSmoothing, 0));
+        collect(traySlots || [], Qt.vector4d(trayTendrilBlend.x, trayTendrilBlend.y, trayWaistSmoothing, 0));
+        collect(trayMenuSlots || [], Qt.vector4d(trayMenuTendrilBlend.x, trayMenuTendrilBlend.y, trayMenuWaistSmoothing, 0));
+        if (!list.length && !power.length)
+            collect(tendrilSlots || [], Qt.vector4d(launcherTendrilBlend.x, launcherTendrilBlend.y, launcherWaistSmoothing, 0));
+        list.sort(function(a, b) { return b.slot.activation - a.slot.activation; });
+        power.sort(function(a, b) { return b.slot.activation - a.slot.activation; });
+        return power.concat(list).slice(0, renderCapacity);
     }
 
     property var visibleTendrils: visibleSlots()
@@ -226,17 +216,24 @@ ShaderEffect {
     property real tendrilPanelMinStretchThickness: 0.6
 
     function slotPos(i) {
-        var s = visibleTendrils[i];
+        var entry = visibleTendrils[i];
+        var s = entry ? entry.slot : null;
         return s ? Qt.vector4d(s.rootX, s.rootY, s.tipX, s.tipY) : Qt.vector4d(0, 0, 0, 0);
     }
 
     function slotThick(i) {
-        var s = visibleTendrils[i];
+        var entry = visibleTendrils[i];
+        var s = entry ? entry.slot : null;
         if (!s) return Qt.vector4d(0, 0, 0, 0);
         var tension = s.tension || 0.0;
         var stretchFactor = Math.pow(tension, tendrilPanelStretchExponent);
         var panelThick = s.panelThick * (1.0 - stretchFactor) + tendrilPanelMinStretchThickness * stretchFactor;
         return Qt.vector4d(s.rootThick, s.waistThick, panelThick, s.activation);
+    }
+
+    function slotProfile(i) {
+        var entry = visibleTendrils[i];
+        return entry ? entry.profile : Qt.vector4d(0, 0, 0, 0);
     }
 
     // ==== Generated uniform bindings 0..63 ====
@@ -368,8 +365,72 @@ ShaderEffect {
     property vector4d tendril61Thick: slotThick(61)
     property vector4d tendril62Thick: slotThick(62)
     property vector4d tendril63Thick: slotThick(63)
+    property vector4d tendril0Profile: slotProfile(0)
+    property vector4d tendril1Profile: slotProfile(1)
+    property vector4d tendril2Profile: slotProfile(2)
+    property vector4d tendril3Profile: slotProfile(3)
+    property vector4d tendril4Profile: slotProfile(4)
+    property vector4d tendril5Profile: slotProfile(5)
+    property vector4d tendril6Profile: slotProfile(6)
+    property vector4d tendril7Profile: slotProfile(7)
+    property vector4d tendril8Profile: slotProfile(8)
+    property vector4d tendril9Profile: slotProfile(9)
+    property vector4d tendril10Profile: slotProfile(10)
+    property vector4d tendril11Profile: slotProfile(11)
+    property vector4d tendril12Profile: slotProfile(12)
+    property vector4d tendril13Profile: slotProfile(13)
+    property vector4d tendril14Profile: slotProfile(14)
+    property vector4d tendril15Profile: slotProfile(15)
+    property vector4d tendril16Profile: slotProfile(16)
+    property vector4d tendril17Profile: slotProfile(17)
+    property vector4d tendril18Profile: slotProfile(18)
+    property vector4d tendril19Profile: slotProfile(19)
+    property vector4d tendril20Profile: slotProfile(20)
+    property vector4d tendril21Profile: slotProfile(21)
+    property vector4d tendril22Profile: slotProfile(22)
+    property vector4d tendril23Profile: slotProfile(23)
+    property vector4d tendril24Profile: slotProfile(24)
+    property vector4d tendril25Profile: slotProfile(25)
+    property vector4d tendril26Profile: slotProfile(26)
+    property vector4d tendril27Profile: slotProfile(27)
+    property vector4d tendril28Profile: slotProfile(28)
+    property vector4d tendril29Profile: slotProfile(29)
+    property vector4d tendril30Profile: slotProfile(30)
+    property vector4d tendril31Profile: slotProfile(31)
+    property vector4d tendril32Profile: slotProfile(32)
+    property vector4d tendril33Profile: slotProfile(33)
+    property vector4d tendril34Profile: slotProfile(34)
+    property vector4d tendril35Profile: slotProfile(35)
+    property vector4d tendril36Profile: slotProfile(36)
+    property vector4d tendril37Profile: slotProfile(37)
+    property vector4d tendril38Profile: slotProfile(38)
+    property vector4d tendril39Profile: slotProfile(39)
+    property vector4d tendril40Profile: slotProfile(40)
+    property vector4d tendril41Profile: slotProfile(41)
+    property vector4d tendril42Profile: slotProfile(42)
+    property vector4d tendril43Profile: slotProfile(43)
+    property vector4d tendril44Profile: slotProfile(44)
+    property vector4d tendril45Profile: slotProfile(45)
+    property vector4d tendril46Profile: slotProfile(46)
+    property vector4d tendril47Profile: slotProfile(47)
+    property vector4d tendril48Profile: slotProfile(48)
+    property vector4d tendril49Profile: slotProfile(49)
+    property vector4d tendril50Profile: slotProfile(50)
+    property vector4d tendril51Profile: slotProfile(51)
+    property vector4d tendril52Profile: slotProfile(52)
+    property vector4d tendril53Profile: slotProfile(53)
+    property vector4d tendril54Profile: slotProfile(54)
+    property vector4d tendril55Profile: slotProfile(55)
+    property vector4d tendril56Profile: slotProfile(56)
+    property vector4d tendril57Profile: slotProfile(57)
+    property vector4d tendril58Profile: slotProfile(58)
+    property vector4d tendril59Profile: slotProfile(59)
+    property vector4d tendril60Profile: slotProfile(60)
+    property vector4d tendril61Profile: slotProfile(61)
+    property vector4d tendril62Profile: slotProfile(62)
+    property vector4d tendril63Profile: slotProfile(63)
     // ==== end generated ====
 
-    fragmentShader: Qt.resolvedUrl("shaders/border-sharpness.frag.qsb")
+    fragmentShader: Qt.resolvedUrl("shaders/border-fast.frag.qsb")
     blending: true
 }

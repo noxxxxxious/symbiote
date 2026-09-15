@@ -11,11 +11,14 @@ import sys
 
 count = int(sys.argv[1]) if len(sys.argv) > 1 else 16
 
-print("// ==== Paste into Border.qml (replaces existing tendrilNPos/Thick block) ====")
+print("// ==== Paste into Border.qml (replaces existing tendrilNPos/Thick/Profile block) ====")
 for i in range(count):
     print(f"    property vector4d tendril{i}Pos: slotPos({i})")
 for i in range(count):
     print(f"    property vector4d tendril{i}Thick: slotThick({i})")
+
+for i in range(count):
+    print(f"    property vector4d tendril{i}Profile: slotProfile({i})")
 
 print()
 print("// ==== Paste into border.frag uniform buf { ... } (replaces existing members) ====")
@@ -24,10 +27,13 @@ for i in range(count):
 for i in range(count):
     print(f"    vec4 tendril{i}Thick;")
 
+for i in range(count):
+    print(f"    vec4 tendril{i}Profile;")
+
 print()
 print("// ==== Paste into border.frag main() (replaces existing addTendril calls) ====")
 for i in range(count):
-    print(f"    scene = addTendril(scene, px, tendril{i}Pos, tendril{i}Thick, tendrilBlendRadius);")
+    print(f"    distances = addTendrilPair(distances, px, tendril{i}Pos, tendril{i}Thick, tendril{i}Profile);")
 
 print()
 print(f"// Remember to also set Theme.tendrilRenderCapacity: {count}")

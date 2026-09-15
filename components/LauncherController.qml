@@ -15,6 +15,7 @@ QtObject {
     }
 
     function openOn(screen) {
+        PowerMenuController.close()
         SettingsController.close();
         activeScreen = screen.name;
     }

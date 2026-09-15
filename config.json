@@ -63,6 +63,18 @@
         "spikeVariance": 0.75,
         "spikesEnabled": false
     },
+    "powerMenu": {
+        "rootThickness": 26,
+        "spikeFrequency": 3,
+        "spikeLength": 22,
+        "spikeOverride": true,
+        "spikeSharpness": 1,
+        "spikeVariance": 0.65,
+        "spikesEnabled": true,
+        "tendrilsPerSide": 2,
+        "tipThickness": 10,
+        "waistThickness": 3
+    },
     "settingsPanel": {
         "spikeFrequency": 3.5,
         "spikeLength": 10,
@@ -149,5 +161,21 @@
     "wallpaper": {
         "directory": "/home/nox/Pictures/Wallpapers",
         "path": "/home/nox/Pictures/Wallpapers/gemini-catppuccin-macchiato-green-wallpaper-03-upscaled.png"
+    },
+    "workspaces": {
+        "autoHide": true,
+        "chamberRadius": 24,
+        "count": 5,
+        "duration": 300,
+        "edge": "right",
+        "enabled": true,
+        "nodeSpacing": 59,
+        "revealDuration": 1500,
+        "showNumbers": false,
+        "showOnChange": true,
+        "tendrilWidth": 3,
+        "tendrils": true,
+        "tubeRadius": 8,
+        "vdesk": true
     }
 }

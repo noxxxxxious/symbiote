@@ -27,6 +27,13 @@ layout(std140, binding = 0) uniform buf {
     float organicBorderAmplitudeRange;
 
     // --- Dedicated Launcher geometry ---
+    vec4 powerRect0;
+    vec4 powerRect1;
+    vec4 powerRect2;
+    vec4 powerRect3;
+    vec4 powerRect4;
+    vec4 powerSpikes;
+    float powerSpikeSharpness;
     float launcherSpikeSharpness;
     float clockSpikeSharpness;
     float traySpikeSharpness;
@@ -208,6 +215,70 @@ layout(std140, binding = 0) uniform buf {
     vec4 tendril61Thick;
     vec4 tendril62Thick;
     vec4 tendril63Thick;
+    vec4 tendril0Profile;
+    vec4 tendril1Profile;
+    vec4 tendril2Profile;
+    vec4 tendril3Profile;
+    vec4 tendril4Profile;
+    vec4 tendril5Profile;
+    vec4 tendril6Profile;
+    vec4 tendril7Profile;
+    vec4 tendril8Profile;
+    vec4 tendril9Profile;
+    vec4 tendril10Profile;
+    vec4 tendril11Profile;
+    vec4 tendril12Profile;
+    vec4 tendril13Profile;
+    vec4 tendril14Profile;
+    vec4 tendril15Profile;
+    vec4 tendril16Profile;
+    vec4 tendril17Profile;
+    vec4 tendril18Profile;
+    vec4 tendril19Profile;
+    vec4 tendril20Profile;
+    vec4 tendril21Profile;
+    vec4 tendril22Profile;
+    vec4 tendril23Profile;
+    vec4 tendril24Profile;
+    vec4 tendril25Profile;
+    vec4 tendril26Profile;
+    vec4 tendril27Profile;
+    vec4 tendril28Profile;
+    vec4 tendril29Profile;
+    vec4 tendril30Profile;
+    vec4 tendril31Profile;
+    vec4 tendril32Profile;
+    vec4 tendril33Profile;
+    vec4 tendril34Profile;
+    vec4 tendril35Profile;
+    vec4 tendril36Profile;
+    vec4 tendril37Profile;
+    vec4 tendril38Profile;
+    vec4 tendril39Profile;
+    vec4 tendril40Profile;
+    vec4 tendril41Profile;
+    vec4 tendril42Profile;
+    vec4 tendril43Profile;
+    vec4 tendril44Profile;
+    vec4 tendril45Profile;
+    vec4 tendril46Profile;
+    vec4 tendril47Profile;
+    vec4 tendril48Profile;
+    vec4 tendril49Profile;
+    vec4 tendril50Profile;
+    vec4 tendril51Profile;
+    vec4 tendril52Profile;
+    vec4 tendril53Profile;
+    vec4 tendril54Profile;
+    vec4 tendril55Profile;
+    vec4 tendril56Profile;
+    vec4 tendril57Profile;
+    vec4 tendril58Profile;
+    vec4 tendril59Profile;
+    vec4 tendril60Profile;
+    vec4 tendril61Profile;
+    vec4 tendril62Profile;
+    vec4 tendril63Profile;
     // ==== end generated ====
 };
 
@@ -310,63 +381,28 @@ float sdTendril(vec2 p, vec2 root, vec2 tip, float rootR, float waistR, float pa
     return length(p - closest) - radius;
 }
 
-float addTendril(float scene, vec2 px, vec4 pos, vec4 thick, vec2 blendK, float waistSmoothing) {
+// Return scene and inner-glow distances together: the expensive geometry
+// is identical for both passes. Uniform profile comes from the owning manager.
+vec2 addTendrilPair(vec2 scene, vec2 px, vec4 pos, vec4 thick, vec4 profile) {
     float act = clamp(thick.w, 0.0, 1.0);
-    float rootR = thick.x * act;
-    float waistR = thick.y * act;
-    float panelR = thick.z * act;
+    if (act <= 0.001) return scene;
     vec2 root = pos.xy;
     vec2 tip = pos.zw;
-    float raw = sdTendril(px, root, tip, rootR, waistR, panelR, waistSmoothing);
+    float maxRadius = max(thick.x, max(thick.y, thick.z)) * act;
+    // A conservative enclosing box permits an exact early rejection. A
+    // smooth union cannot alter either distance when separated by its radius.
+    vec2 q = max(min(root, tip) - vec2(maxRadius) - px,
+                 px - max(root, tip) - vec2(maxRadius));
+    float lowerBound = length(max(q, vec2(0))) + min(max(q.x, q.y), 0.0);
+    float maxBlend = max(max(profile.x, profile.y) * act, 0.001);
+    if (min(lowerBound, 1.0e4) >= max(scene.x, scene.y) + maxBlend) return scene;
+    float raw = sdTendril(px, root, tip, thick.x * act, thick.y * act, thick.z * act, profile.z);
     float gate = smoothstep(0.0, 0.02, act);
-    float tendrilSDF = mix(1.0e4, raw, gate);
+    float distance = mix(1.0e4, raw, gate);
     vec2 ba = tip - root;
     float h = clamp(dot(px - root, ba) / max(dot(ba, ba), 1e-4), 0.0, 1.0);
-    float k = max(mix(blendK.x, blendK.y, h) * act, 0.001);
-    return smin(scene, tendrilSDF, k);
-}
-
-bool isClockTendril(vec2 tip) {
-    vec2 cMin = clockPos - vec2(15.0);
-    vec2 cMax = clockPos + clockSize + vec2(15.0);
-    return (tip.x >= cMin.x && tip.x <= cMax.x && tip.y >= cMin.y && tip.y <= cMax.y);
-}
-
-// This is the same as isClockTendril for now, but I'll leave this separate to make things easier in case we decide to change some stuff later on
-bool isTrayTendril(vec2 tip) {
-    vec2 tMin = trayPos - vec2(15.0);
-    vec2 tMax = trayPos + traySize + vec2(15.0);
-    return (tip.x >= tMin.x && tip.x <= tMax.x && tip.y >= tMin.y && tip.y <= tMax.y);
-}
-
-bool isTrayMenuTendril(vec2 tip) {
-    vec2 mMin = trayMenuPos - vec2(15.0);
-    vec2 mMax = trayMenuPos + trayMenuSize + vec2(15.0);
-    return trayMenuSize.x > 1.0 && trayMenuSize.y > 1.0
-        && tip.x >= mMin.x && tip.x <= mMax.x
-        && tip.y >= mMin.y && tip.y <= mMax.y;
-}
-
-float addTendrilAuto(float scene, vec2 px, vec4 pos, vec4 thick) {
-    vec2 tip = pos.zw;
-    vec2 blendK;
-    float waist;
-
-    if (isClockTendril(tip)) {
-        blendK = clockTendrilBlend;
-        waist = clockWaistSmoothing;
-    } else if (isTrayMenuTendril(tip)) {
-        blendK = trayMenuTendrilBlend;
-        waist = trayMenuWaistSmoothing;
-    } else if (isTrayTendril(tip)) {
-        blendK = trayTendrilBlend;
-        waist = trayWaistSmoothing;
-    } else {
-        blendK = launcherTendrilBlend;
-        waist = launcherWaistSmoothing;
-    }
-
-    return addTendril(scene, px, pos, thick, blendK, waist);
+    float k = max(mix(profile.x, profile.y, h) * act, 0.001);
+    return vec2(smin(scene.x, distance, k), smin(scene.y, distance, k));
 }
 
 const float PI = 3.14159265358979323846;
@@ -693,6 +729,13 @@ float tendrilRootOrganicMask(vec2 px, vec4 pos, vec4 thick) {
     );
 }
 
+float powerPanelSDF(vec2 px, vec4 rect) {
+    if (rect.z <= 1.0 || rect.w <= 1.0) return 1.0e4;
+    float radius = min(32.0, min(rect.z, rect.w) * 0.5);
+    return spikedPanel(px - rect.xy - rect.zw * 0.5, rect.zw * 0.5,
+                      vec4(radius), powerSpikes, powerSpikeSharpness);
+}
+
 void main() {
     vec2 px = qt_TexCoord0 * size;
     vec2 p = px - size * 0.5;
@@ -703,6 +746,7 @@ void main() {
 
     float rootMask = 1.0;
 
+    if (organicBorderEnabledF > 0.5) {
     // ==== Generated by gen_tendril_uniforms.py 64 (root mask pass) ====
     rootMask = min(rootMask, tendrilRootOrganicMask(px, tendril0Pos, tendril0Thick));
     rootMask = min(rootMask, tendrilRootOrganicMask(px, tendril1Pos, tendril1Thick));
@@ -768,6 +812,7 @@ void main() {
     rootMask = min(rootMask, tendrilRootOrganicMask(px, tendril61Pos, tendril61Thick));
     rootMask = min(rootMask, tendrilRootOrganicMask(px, tendril62Pos, tendril62Thick));
     rootMask = min(rootMask, tendrilRootOrganicMask(px, tendril63Pos, tendril63Thick));
+    }
     // ==== end generated ====
 
     float organicOffset = organicBorderDisplacement(px, size) * rootMask;
@@ -803,141 +848,80 @@ void main() {
 
     // Combine all panels into scene
     float panelsSDF = min(launcherSDF, min(clockSDF, min(traySDF, trayMenuSDF)));
+    panelsSDF = min(panelsSDF, min(min(powerPanelSDF(px, powerRect0), powerPanelSDF(px, powerRect1)),
+                                 min(powerPanelSDF(px, powerRect2), powerPanelSDF(px, powerRect3))));
+    panelsSDF = min(panelsSDF, powerPanelSDF(px, powerRect4));
     float scene = min(ringSDF, panelsSDF);
     float featureSDF = min(-organicInnerSDF, panelsSDF);
 
-    // ==== Generated by gen_tendril_uniforms.py 64 (scene pass) ====
-    scene = addTendrilAuto(scene, px, tendril0Pos, tendril0Thick);
-    scene = addTendrilAuto(scene, px, tendril1Pos, tendril1Thick);
-    scene = addTendrilAuto(scene, px, tendril2Pos, tendril2Thick);
-    scene = addTendrilAuto(scene, px, tendril3Pos, tendril3Thick);
-    scene = addTendrilAuto(scene, px, tendril4Pos, tendril4Thick);
-    scene = addTendrilAuto(scene, px, tendril5Pos, tendril5Thick);
-    scene = addTendrilAuto(scene, px, tendril6Pos, tendril6Thick);
-    scene = addTendrilAuto(scene, px, tendril7Pos, tendril7Thick);
-    scene = addTendrilAuto(scene, px, tendril8Pos, tendril8Thick);
-    scene = addTendrilAuto(scene, px, tendril9Pos, tendril9Thick);
-    scene = addTendrilAuto(scene, px, tendril10Pos, tendril10Thick);
-    scene = addTendrilAuto(scene, px, tendril11Pos, tendril11Thick);
-    scene = addTendrilAuto(scene, px, tendril12Pos, tendril12Thick);
-    scene = addTendrilAuto(scene, px, tendril13Pos, tendril13Thick);
-    scene = addTendrilAuto(scene, px, tendril14Pos, tendril14Thick);
-    scene = addTendrilAuto(scene, px, tendril15Pos, tendril15Thick);
-    scene = addTendrilAuto(scene, px, tendril16Pos, tendril16Thick);
-    scene = addTendrilAuto(scene, px, tendril17Pos, tendril17Thick);
-    scene = addTendrilAuto(scene, px, tendril18Pos, tendril18Thick);
-    scene = addTendrilAuto(scene, px, tendril19Pos, tendril19Thick);
-    scene = addTendrilAuto(scene, px, tendril20Pos, tendril20Thick);
-    scene = addTendrilAuto(scene, px, tendril21Pos, tendril21Thick);
-    scene = addTendrilAuto(scene, px, tendril22Pos, tendril22Thick);
-    scene = addTendrilAuto(scene, px, tendril23Pos, tendril23Thick);
-    scene = addTendrilAuto(scene, px, tendril24Pos, tendril24Thick);
-    scene = addTendrilAuto(scene, px, tendril25Pos, tendril25Thick);
-    scene = addTendrilAuto(scene, px, tendril26Pos, tendril26Thick);
-    scene = addTendrilAuto(scene, px, tendril27Pos, tendril27Thick);
-    scene = addTendrilAuto(scene, px, tendril28Pos, tendril28Thick);
-    scene = addTendrilAuto(scene, px, tendril29Pos, tendril29Thick);
-    scene = addTendrilAuto(scene, px, tendril30Pos, tendril30Thick);
-    scene = addTendrilAuto(scene, px, tendril31Pos, tendril31Thick);
-    scene = addTendrilAuto(scene, px, tendril32Pos, tendril32Thick);
-    scene = addTendrilAuto(scene, px, tendril33Pos, tendril33Thick);
-    scene = addTendrilAuto(scene, px, tendril34Pos, tendril34Thick);
-    scene = addTendrilAuto(scene, px, tendril35Pos, tendril35Thick);
-    scene = addTendrilAuto(scene, px, tendril36Pos, tendril36Thick);
-    scene = addTendrilAuto(scene, px, tendril37Pos, tendril37Thick);
-    scene = addTendrilAuto(scene, px, tendril38Pos, tendril38Thick);
-    scene = addTendrilAuto(scene, px, tendril39Pos, tendril39Thick);
-    scene = addTendrilAuto(scene, px, tendril40Pos, tendril40Thick);
-    scene = addTendrilAuto(scene, px, tendril41Pos, tendril41Thick);
-    scene = addTendrilAuto(scene, px, tendril42Pos, tendril42Thick);
-    scene = addTendrilAuto(scene, px, tendril43Pos, tendril43Thick);
-    scene = addTendrilAuto(scene, px, tendril44Pos, tendril44Thick);
-    scene = addTendrilAuto(scene, px, tendril45Pos, tendril45Thick);
-    scene = addTendrilAuto(scene, px, tendril46Pos, tendril46Thick);
-    scene = addTendrilAuto(scene, px, tendril47Pos, tendril47Thick);
-    scene = addTendrilAuto(scene, px, tendril48Pos, tendril48Thick);
-    scene = addTendrilAuto(scene, px, tendril49Pos, tendril49Thick);
-    scene = addTendrilAuto(scene, px, tendril50Pos, tendril50Thick);
-    scene = addTendrilAuto(scene, px, tendril51Pos, tendril51Thick);
-    scene = addTendrilAuto(scene, px, tendril52Pos, tendril52Thick);
-    scene = addTendrilAuto(scene, px, tendril53Pos, tendril53Thick);
-    scene = addTendrilAuto(scene, px, tendril54Pos, tendril54Thick);
-    scene = addTendrilAuto(scene, px, tendril55Pos, tendril55Thick);
-    scene = addTendrilAuto(scene, px, tendril56Pos, tendril56Thick);
-    scene = addTendrilAuto(scene, px, tendril57Pos, tendril57Thick);
-    scene = addTendrilAuto(scene, px, tendril58Pos, tendril58Thick);
-    scene = addTendrilAuto(scene, px, tendril59Pos, tendril59Thick);
-    scene = addTendrilAuto(scene, px, tendril60Pos, tendril60Thick);
-    scene = addTendrilAuto(scene, px, tendril61Pos, tendril61Thick);
-    scene = addTendrilAuto(scene, px, tendril62Pos, tendril62Thick);
-    scene = addTendrilAuto(scene, px, tendril63Pos, tendril63Thick);
-
-    // ==== Generated by gen_tendril_uniforms.py 64 (feature pass) ====
-    featureSDF = addTendrilAuto(featureSDF, px, tendril0Pos, tendril0Thick);
-    featureSDF = addTendrilAuto(featureSDF, px, tendril1Pos, tendril1Thick);
-    featureSDF = addTendrilAuto(featureSDF, px, tendril2Pos, tendril2Thick);
-    featureSDF = addTendrilAuto(featureSDF, px, tendril3Pos, tendril3Thick);
-    featureSDF = addTendrilAuto(featureSDF, px, tendril4Pos, tendril4Thick);
-    featureSDF = addTendrilAuto(featureSDF, px, tendril5Pos, tendril5Thick);
-    featureSDF = addTendrilAuto(featureSDF, px, tendril6Pos, tendril6Thick);
-    featureSDF = addTendrilAuto(featureSDF, px, tendril7Pos, tendril7Thick);
-    featureSDF = addTendrilAuto(featureSDF, px, tendril8Pos, tendril8Thick);
-    featureSDF = addTendrilAuto(featureSDF, px, tendril9Pos, tendril9Thick);
-    featureSDF = addTendrilAuto(featureSDF, px, tendril10Pos, tendril10Thick);
-    featureSDF = addTendrilAuto(featureSDF, px, tendril11Pos, tendril11Thick);
-    featureSDF = addTendrilAuto(featureSDF, px, tendril12Pos, tendril12Thick);
-    featureSDF = addTendrilAuto(featureSDF, px, tendril13Pos, tendril13Thick);
-    featureSDF = addTendrilAuto(featureSDF, px, tendril14Pos, tendril14Thick);
-    featureSDF = addTendrilAuto(featureSDF, px, tendril15Pos, tendril15Thick);
-    featureSDF = addTendrilAuto(featureSDF, px, tendril16Pos, tendril16Thick);
-    featureSDF = addTendrilAuto(featureSDF, px, tendril17Pos, tendril17Thick);
-    featureSDF = addTendrilAuto(featureSDF, px, tendril18Pos, tendril18Thick);
-    featureSDF = addTendrilAuto(featureSDF, px, tendril19Pos, tendril19Thick);
-    featureSDF = addTendrilAuto(featureSDF, px, tendril20Pos, tendril20Thick);
-    featureSDF = addTendrilAuto(featureSDF, px, tendril21Pos, tendril21Thick);
-    featureSDF = addTendrilAuto(featureSDF, px, tendril22Pos, tendril22Thick);
-    featureSDF = addTendrilAuto(featureSDF, px, tendril23Pos, tendril23Thick);
-    featureSDF = addTendrilAuto(featureSDF, px, tendril24Pos, tendril24Thick);
-    featureSDF = addTendrilAuto(featureSDF, px, tendril25Pos, tendril25Thick);
-    featureSDF = addTendrilAuto(featureSDF, px, tendril26Pos, tendril26Thick);
-    featureSDF = addTendrilAuto(featureSDF, px, tendril27Pos, tendril27Thick);
-    featureSDF = addTendrilAuto(featureSDF, px, tendril28Pos, tendril28Thick);
-    featureSDF = addTendrilAuto(featureSDF, px, tendril29Pos, tendril29Thick);
-    featureSDF = addTendrilAuto(featureSDF, px, tendril30Pos, tendril30Thick);
-    featureSDF = addTendrilAuto(featureSDF, px, tendril31Pos, tendril31Thick);
-    featureSDF = addTendrilAuto(featureSDF, px, tendril32Pos, tendril32Thick);
-    featureSDF = addTendrilAuto(featureSDF, px, tendril33Pos, tendril33Thick);
-    featureSDF = addTendrilAuto(featureSDF, px, tendril34Pos, tendril34Thick);
-    featureSDF = addTendrilAuto(featureSDF, px, tendril35Pos, tendril35Thick);
-    featureSDF = addTendrilAuto(featureSDF, px, tendril36Pos, tendril36Thick);
-    featureSDF = addTendrilAuto(featureSDF, px, tendril37Pos, tendril37Thick);
-    featureSDF = addTendrilAuto(featureSDF, px, tendril38Pos, tendril38Thick);
-    featureSDF = addTendrilAuto(featureSDF, px, tendril39Pos, tendril39Thick);
-    featureSDF = addTendrilAuto(featureSDF, px, tendril40Pos, tendril40Thick);
-    featureSDF = addTendrilAuto(featureSDF, px, tendril41Pos, tendril41Thick);
-    featureSDF = addTendrilAuto(featureSDF, px, tendril42Pos, tendril42Thick);
-    featureSDF = addTendrilAuto(featureSDF, px, tendril43Pos, tendril43Thick);
-    featureSDF = addTendrilAuto(featureSDF, px, tendril44Pos, tendril44Thick);
-    featureSDF = addTendrilAuto(featureSDF, px, tendril45Pos, tendril45Thick);
-    featureSDF = addTendrilAuto(featureSDF, px, tendril46Pos, tendril46Thick);
-    featureSDF = addTendrilAuto(featureSDF, px, tendril47Pos, tendril47Thick);
-    featureSDF = addTendrilAuto(featureSDF, px, tendril48Pos, tendril48Thick);
-    featureSDF = addTendrilAuto(featureSDF, px, tendril49Pos, tendril49Thick);
-    featureSDF = addTendrilAuto(featureSDF, px, tendril50Pos, tendril50Thick);
-    featureSDF = addTendrilAuto(featureSDF, px, tendril51Pos, tendril51Thick);
-    featureSDF = addTendrilAuto(featureSDF, px, tendril52Pos, tendril52Thick);
-    featureSDF = addTendrilAuto(featureSDF, px, tendril53Pos, tendril53Thick);
-    featureSDF = addTendrilAuto(featureSDF, px, tendril54Pos, tendril54Thick);
-    featureSDF = addTendrilAuto(featureSDF, px, tendril55Pos, tendril55Thick);
-    featureSDF = addTendrilAuto(featureSDF, px, tendril56Pos, tendril56Thick);
-    featureSDF = addTendrilAuto(featureSDF, px, tendril57Pos, tendril57Thick);
-    featureSDF = addTendrilAuto(featureSDF, px, tendril58Pos, tendril58Thick);
-    featureSDF = addTendrilAuto(featureSDF, px, tendril59Pos, tendril59Thick);
-    featureSDF = addTendrilAuto(featureSDF, px, tendril60Pos, tendril60Thick);
-    featureSDF = addTendrilAuto(featureSDF, px, tendril61Pos, tendril61Thick);
-    featureSDF = addTendrilAuto(featureSDF, px, tendril62Pos, tendril62Thick);
-    featureSDF = addTendrilAuto(featureSDF, px, tendril63Pos, tendril63Thick);
-    // ==== end generated ====
+    vec2 distances = vec2(scene, featureSDF);
+    // ==== Generated combined tendril pass ====
+    distances = addTendrilPair(distances, px, tendril0Pos, tendril0Thick, tendril0Profile);
+    distances = addTendrilPair(distances, px, tendril1Pos, tendril1Thick, tendril1Profile);
+    distances = addTendrilPair(distances, px, tendril2Pos, tendril2Thick, tendril2Profile);
+    distances = addTendrilPair(distances, px, tendril3Pos, tendril3Thick, tendril3Profile);
+    distances = addTendrilPair(distances, px, tendril4Pos, tendril4Thick, tendril4Profile);
+    distances = addTendrilPair(distances, px, tendril5Pos, tendril5Thick, tendril5Profile);
+    distances = addTendrilPair(distances, px, tendril6Pos, tendril6Thick, tendril6Profile);
+    distances = addTendrilPair(distances, px, tendril7Pos, tendril7Thick, tendril7Profile);
+    distances = addTendrilPair(distances, px, tendril8Pos, tendril8Thick, tendril8Profile);
+    distances = addTendrilPair(distances, px, tendril9Pos, tendril9Thick, tendril9Profile);
+    distances = addTendrilPair(distances, px, tendril10Pos, tendril10Thick, tendril10Profile);
+    distances = addTendrilPair(distances, px, tendril11Pos, tendril11Thick, tendril11Profile);
+    distances = addTendrilPair(distances, px, tendril12Pos, tendril12Thick, tendril12Profile);
+    distances = addTendrilPair(distances, px, tendril13Pos, tendril13Thick, tendril13Profile);
+    distances = addTendrilPair(distances, px, tendril14Pos, tendril14Thick, tendril14Profile);
+    distances = addTendrilPair(distances, px, tendril15Pos, tendril15Thick, tendril15Profile);
+    distances = addTendrilPair(distances, px, tendril16Pos, tendril16Thick, tendril16Profile);
+    distances = addTendrilPair(distances, px, tendril17Pos, tendril17Thick, tendril17Profile);
+    distances = addTendrilPair(distances, px, tendril18Pos, tendril18Thick, tendril18Profile);
+    distances = addTendrilPair(distances, px, tendril19Pos, tendril19Thick, tendril19Profile);
+    distances = addTendrilPair(distances, px, tendril20Pos, tendril20Thick, tendril20Profile);
+    distances = addTendrilPair(distances, px, tendril21Pos, tendril21Thick, tendril21Profile);
+    distances = addTendrilPair(distances, px, tendril22Pos, tendril22Thick, tendril22Profile);
+    distances = addTendrilPair(distances, px, tendril23Pos, tendril23Thick, tendril23Profile);
+    distances = addTendrilPair(distances, px, tendril24Pos, tendril24Thick, tendril24Profile);
+    distances = addTendrilPair(distances, px, tendril25Pos, tendril25Thick, tendril25Profile);
+    distances = addTendrilPair(distances, px, tendril26Pos, tendril26Thick, tendril26Profile);
+    distances = addTendrilPair(distances, px, tendril27Pos, tendril27Thick, tendril27Profile);
+    distances = addTendrilPair(distances, px, tendril28Pos, tendril28Thick, tendril28Profile);
+    distances = addTendrilPair(distances, px, tendril29Pos, tendril29Thick, tendril29Profile);
+    distances = addTendrilPair(distances, px, tendril30Pos, tendril30Thick, tendril30Profile);
+    distances = addTendrilPair(distances, px, tendril31Pos, tendril31Thick, tendril31Profile);
+    distances = addTendrilPair(distances, px, tendril32Pos, tendril32Thick, tendril32Profile);
+    distances = addTendrilPair(distances, px, tendril33Pos, tendril33Thick, tendril33Profile);
+    distances = addTendrilPair(distances, px, tendril34Pos, tendril34Thick, tendril34Profile);
+    distances = addTendrilPair(distances, px, tendril35Pos, tendril35Thick, tendril35Profile);
+    distances = addTendrilPair(distances, px, tendril36Pos, tendril36Thick, tendril36Profile);
+    distances = addTendrilPair(distances, px, tendril37Pos, tendril37Thick, tendril37Profile);
+    distances = addTendrilPair(distances, px, tendril38Pos, tendril38Thick, tendril38Profile);
+    distances = addTendrilPair(distances, px, tendril39Pos, tendril39Thick, tendril39Profile);
+    distances = addTendrilPair(distances, px, tendril40Pos, tendril40Thick, tendril40Profile);
+    distances = addTendrilPair(distances, px, tendril41Pos, tendril41Thick, tendril41Profile);
+    distances = addTendrilPair(distances, px, tendril42Pos, tendril42Thick, tendril42Profile);
+    distances = addTendrilPair(distances, px, tendril43Pos, tendril43Thick, tendril43Profile);
+    distances = addTendrilPair(distances, px, tendril44Pos, tendril44Thick, tendril44Profile);
+    distances = addTendrilPair(distances, px, tendril45Pos, tendril45Thick, tendril45Profile);
+    distances = addTendrilPair(distances, px, tendril46Pos, tendril46Thick, tendril46Profile);
+    distances = addTendrilPair(distances, px, tendril47Pos, tendril47Thick, tendril47Profile);
+    distances = addTendrilPair(distances, px, tendril48Pos, tendril48Thick, tendril48Profile);
+    distances = addTendrilPair(distances, px, tendril49Pos, tendril49Thick, tendril49Profile);
+    distances = addTendrilPair(distances, px, tendril50Pos, tendril50Thick, tendril50Profile);
+    distances = addTendrilPair(distances, px, tendril51Pos, tendril51Thick, tendril51Profile);
+    distances = addTendrilPair(distances, px, tendril52Pos, tendril52Thick, tendril52Profile);
+    distances = addTendrilPair(distances, px, tendril53Pos, tendril53Thick, tendril53Profile);
+    distances = addTendrilPair(distances, px, tendril54Pos, tendril54Thick, tendril54Profile);
+    distances = addTendrilPair(distances, px, tendril55Pos, tendril55Thick, tendril55Profile);
+    distances = addTendrilPair(distances, px, tendril56Pos, tendril56Thick, tendril56Profile);
+    distances = addTendrilPair(distances, px, tendril57Pos, tendril57Thick, tendril57Profile);
+    distances = addTendrilPair(distances, px, tendril58Pos, tendril58Thick, tendril58Profile);
+    distances = addTendrilPair(distances, px, tendril59Pos, tendril59Thick, tendril59Profile);
+    distances = addTendrilPair(distances, px, tendril60Pos, tendril60Thick, tendril60Profile);
+    distances = addTendrilPair(distances, px, tendril61Pos, tendril61Thick, tendril61Profile);
+    distances = addTendrilPair(distances, px, tendril62Pos, tendril62Thick, tendril62Profile);
+    distances = addTendrilPair(distances, px, tendril63Pos, tendril63Thick, tendril63Profile);
+    scene = distances.x;
+    featureSDF = distances.y;
 
     float coverage = 1.0 - smoothstep(0.0, smoothing, scene);
     float alpha = coverage * borderColor.a * qt_Opacity;

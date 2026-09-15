@@ -141,6 +141,36 @@ FileView {
             property real spikeSharpness: 0.75
         }
 
+        property JsonObject powerMenu: JsonObject {
+            property int tendrilsPerSide: 1
+            property real rootThickness: 16
+            property real waistThickness: 3
+            property real tipThickness: 7
+            property bool spikeOverride: false
+            property bool spikesEnabled: false
+            property real spikeFrequency: 3
+            property real spikeLength: 10
+            property real spikeVariance: 0.3
+            property real spikeSharpness: 0.75
+        }
+
+        property JsonObject workspaces: JsonObject {
+            property bool enabled: true
+            property string edge: "top"
+            property bool autoHide: true
+            property int count: 5
+            property bool vdesk: false
+            property bool showNumbers: true
+            property real tubeRadius: 5
+            property real nodeSpacing: 46
+            property real chamberRadius: 17
+            property int duration: 480
+            property bool showOnChange: true
+            property int revealDuration: 1500
+            property bool tendrils: true
+            property real tendrilWidth: 3
+        }
+
         property JsonObject text: JsonObject {
             property color color: "red"
             property color soft: "white"

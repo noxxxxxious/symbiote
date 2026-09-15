@@ -18,3 +18,11 @@ Settings 1.0 Settings.qml
 FeatheredRect 1.0 FeatheredRect.qml
 Wallpaper 1.0 Wallpaper.qml
 Tray 1.0 Tray.qml
+
+singleton PowerMenuController 1.0 PowerMenuController.qml
+PowerMenu 1.0 PowerMenu.qml
+PowerCard 1.0 PowerCard.qml
+PowerTrigger 1.0 PowerTrigger.qml
+
+singleton WorkspaceController 1.0 WorkspaceController.qml
+WorkspaceIndicator 1.0 WorkspaceIndicator.qml

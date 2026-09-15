@@ -217,7 +217,7 @@ Item {
                         }
 
                         Repeater {
-                            model: ["All", "Panels", "Launcher", "Clock", "Tray", "Settings", "Text", "Border", "Shadows", "Wallpaper"]
+                            model: ["All", "Panels", "Launcher", "Clock", "Tray", "Settings", "Power", "Workspaces", "Text", "Border", "Shadows", "Wallpaper"]
 
                             delegate: Rectangle {
                                 id: tabBtn
@@ -1088,6 +1088,171 @@ Item {
                                     numMin: 0; numMax: 1; numStep: 0.05
                                     value: Config.sAdapter.settingsPanel.spikeVariance
                                     onCommit: function(value) { Config.sAdapter.settingsPanel.spikeVariance = Number(value); }
+                                }
+                            }
+
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                visible: contentCol.isTab("Power") && contentCol.matches("Power", "Tendrils Count Root Waist Tip Thickness")
+                                Text { text: "POWER MENU TENDRILS"; color: Theme.textColorAccent; font.bold: true; font.pixelSize: 12 }
+                                SettingRow {
+                                    label: "Tendrils per Side"; isNum: true
+                                    numMin: 1; numMax: 2; numStep: 1
+                                    value: Config.sAdapter.powerMenu.tendrilsPerSide
+                                    onCommit: function(value) { Config.sAdapter.powerMenu.tendrilsPerSide = Number(value); }
+                                }
+                                SettingRow {
+                                    label: "Root Thickness"; isNum: true
+                                    numMin: 2; numMax: 30; numStep: 1
+                                    value: Config.sAdapter.powerMenu.rootThickness
+                                    onCommit: function(value) { Config.sAdapter.powerMenu.rootThickness = Number(value); }
+                                }
+                                SettingRow {
+                                    label: "Waist Thickness"; isNum: true
+                                    numMin: 1; numMax: 8; numStep: 0.5
+                                    value: Config.sAdapter.powerMenu.waistThickness
+                                    onCommit: function(value) { Config.sAdapter.powerMenu.waistThickness = Number(value); }
+                                }
+                                SettingRow {
+                                    label: "Panel Tip Thickness"; isNum: true
+                                    numMin: 1; numMax: 16; numStep: 1
+                                    value: Config.sAdapter.powerMenu.tipThickness
+                                    onCommit: function(value) { Config.sAdapter.powerMenu.tipThickness = Number(value); }
+                                }
+                            }
+
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                visible: contentCol.isTab("Power") && contentCol.matches("Power", "Power Menu Spikes Frequency Length Sharpness Variance Override")
+                                Text { text: "POWER MENU SPIKES"; color: Theme.textColorAccent; font.bold: true; font.pixelSize: 12 }
+                                SettingRow {
+                                    label: "Override Global Spikes"; isBool: true
+                                    boolVal: Config.sAdapter.powerMenu.spikeOverride
+                                    onCommit: function(value) { Config.sAdapter.powerMenu.spikeOverride = value; }
+                                }
+                                SettingRow {
+                                    visible: Config.sAdapter.powerMenu.spikeOverride
+                                    label: "Enable Spikes"; isBool: true
+                                    boolVal: Config.sAdapter.powerMenu.spikesEnabled
+                                    onCommit: function(value) { Config.sAdapter.powerMenu.spikesEnabled = value; }
+                                }
+                                SettingRow {
+                                    visible: Config.sAdapter.powerMenu.spikeOverride && Config.sAdapter.powerMenu.spikesEnabled
+                                    label: "Frequency (per 100 px)"; isNum: true
+                                    numMin: 0.5; numMax: 10; numStep: 0.5
+                                    value: Config.sAdapter.powerMenu.spikeFrequency
+                                    onCommit: function(value) { Config.sAdapter.powerMenu.spikeFrequency = Number(value); }
+                                }
+                                SettingRow {
+                                    visible: Config.sAdapter.powerMenu.spikeOverride && Config.sAdapter.powerMenu.spikesEnabled
+                                    label: "Spike Length (px)"; isNum: true
+                                    numMin: 0; numMax: 40; numStep: 1
+                                    value: Config.sAdapter.powerMenu.spikeLength
+                                    onCommit: function(value) { Config.sAdapter.powerMenu.spikeLength = Number(value); }
+                                }
+                                SettingRow {
+                                    visible: Config.sAdapter.powerMenu.spikeOverride && Config.sAdapter.powerMenu.spikesEnabled
+                                    label: "Spike Sharpness"; isNum: true
+                                    numMin: 0; numMax: 1; numStep: 0.05
+                                    value: Config.sAdapter.powerMenu.spikeSharpness
+                                    onCommit: function(value) { Config.sAdapter.powerMenu.spikeSharpness = Number(value); }
+                                }
+                                SettingRow {
+                                    visible: Config.sAdapter.powerMenu.spikeOverride && Config.sAdapter.powerMenu.spikesEnabled
+                                    label: "Length Variance"; isNum: true
+                                    numMin: 0; numMax: 1; numStep: 0.05
+                                    value: Config.sAdapter.powerMenu.spikeVariance
+                                    onCommit: function(value) { Config.sAdapter.powerMenu.spikeVariance = Number(value); }
+                                }
+                            }
+
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                visible: contentCol.isTab("Workspaces") && contentCol.matches("Workspaces", "Indicator Enabled Dock Edge Auto Hide Count Virtual Desktops Vdesk Numbers Tube Transition Reveal Change Duration Tendrils Spacing Radius")
+                                Text { text: "WORKSPACE INDICATOR"; color: Theme.textColorAccent; font.bold: true; font.pixelSize: 12 }
+                                SettingRow {
+                                    label: "Enabled"; isBool: true
+                                    boolVal: Config.sAdapter.workspaces.enabled
+                                    onCommit: function(value) { Config.sAdapter.workspaces.enabled = value; }
+                                }
+                                SettingRow {
+                                    label: "Hide Until Hovered"; isBool: true
+                                    boolVal: Config.sAdapter.workspaces.autoHide
+                                    onCommit: function(value) { Config.sAdapter.workspaces.autoHide = value; }
+                                }
+                                SettingRow {
+                                    label: "Virtual Desktops (vdesk)"; isBool: true
+                                    boolVal: Config.sAdapter.workspaces.vdesk
+                                    onCommit: function(value) { Config.sAdapter.workspaces.vdesk = value; }
+                                }
+                                SettingRow {
+                                    label: "Show Numbers"; isBool: true
+                                    boolVal: Config.sAdapter.workspaces.showNumbers
+                                    onCommit: function(value) { Config.sAdapter.workspaces.showNumbers = value; }
+                                }
+                                SettingRow {
+                                    label: "Dock Edge"; isEnum: true
+                                    enumOptions: ["top", "right", "bottom", "left"]
+                                    value: Config.sAdapter.workspaces.edge
+                                    onCommit: function(value) { Config.sAdapter.workspaces.edge = value; }
+                                }
+                                SettingRow {
+                                    label: "Visible Workspaces / Desktops"; isNum: true
+                                    numMin: 1; numMax: 12; numStep: 1
+                                    value: Config.sAdapter.workspaces.count
+                                    onCommit: function(value) { Config.sAdapter.workspaces.count = Number(value); }
+                                }
+                                SettingRow {
+                                    label: "Tube Radius"; isNum: true
+                                    numMin: 2; numMax: 9; numStep: 0.5
+                                    value: Config.sAdapter.workspaces.tubeRadius
+                                    onCommit: function(value) { Config.sAdapter.workspaces.tubeRadius = Number(value); }
+                                }
+                                SettingRow {
+                                    label: "Node Spacing"; isNum: true
+                                    numMin: 30; numMax: 90; numStep: 1
+                                    value: Config.sAdapter.workspaces.nodeSpacing
+                                    onCommit: function(value) { Config.sAdapter.workspaces.nodeSpacing = Number(value); }
+                                }
+                                SettingRow {
+                                    label: "Chamber Radius"; isNum: true
+                                    numMin: 8; numMax: 30; numStep: 1
+                                    value: Config.sAdapter.workspaces.chamberRadius
+                                    onCommit: function(value) { Config.sAdapter.workspaces.chamberRadius = Number(value); }
+                                }
+                                SettingRow {
+                                    label: "Liquid Transition (ms)"; isNum: true
+                                    numMin: 150; numMax: 1200; numStep: 50
+                                    value: Config.sAdapter.workspaces.duration
+                                    onCommit: function(value) { Config.sAdapter.workspaces.duration = Number(value); }
+                                }
+                                SettingRow {
+                                    label: "Show on Workspace Change"; isBool: true
+                                    boolVal: Config.sAdapter.workspaces.showOnChange
+                                    onCommit: function(value) { Config.sAdapter.workspaces.showOnChange = value; }
+                                }
+                                SettingRow {
+                                    label: "Indicator Tendrils"; isBool: true
+                                    boolVal: Config.sAdapter.workspaces.tendrils
+                                    onCommit: function(value) { Config.sAdapter.workspaces.tendrils = value; }
+                                }
+                                SettingRow {
+                                    label: "Fully Visible Time (ms)"; isNum: true
+                                    numMin: 100; numMax: 5000; numStep: 100
+                                    value: Config.sAdapter.workspaces.revealDuration
+                                    onCommit: function(value) { Config.sAdapter.workspaces.revealDuration = Number(value); }
+                                }
+                                SettingRow {
+                                    label: "Indicator Tendril Width"; isNum: true
+                                    numMin: 1; numMax: 6; numStep: 0.5
+                                    value: Config.sAdapter.workspaces.tendrilWidth
+                                    onCommit: function(value) { Config.sAdapter.workspaces.tendrilWidth = Number(value); }
+                                }
+                                Text {
+                                    visible: Config.sAdapter.workspaces.vdesk && WorkspaceController.vdeskError.length > 0
+                                    text: WorkspaceController.vdeskError
+                                    color: Theme.textColorSoft
+                                    Layout.fillWidth: true; wrapMode: Text.WordWrap
                                 }
                             }
 

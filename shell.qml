@@ -65,17 +65,20 @@ ShellRoot {
                 visible:
                     launcherPanel.isOpen
                     || settingsPanel.visuallyOpen
+                    || powerMenu.visuallyOpen
                     || !isScreenFullscreen
 
-                focusable: launcherPanel.isOpen || settingsPanel.isOpen
+                focusable: launcherPanel.isOpen || settingsPanel.isOpen || powerMenu.isOpen
 
                 HyprlandFocusGrab {
-                    active: launcherPanel.isOpen || settingsPanel.isOpen
+                    active: launcherPanel.isOpen || settingsPanel.isOpen || powerMenu.isOpen
                     windows: [screenRoot]
 
                     onCleared: {
-                        LauncherController.close()
-                        SettingsController.close()
+                        // A late clear from another monitor must not close its replacement.
+                        if (LauncherController.isOpenOn(screenScope.modelData)) LauncherController.close()
+                        if (SettingsController.isOpenOn(screenScope.modelData)) SettingsController.close()
+                        if (PowerMenuController.isOpenOn(screenScope.modelData)) PowerMenuController.close()
                     }
                 }
 
@@ -161,13 +164,25 @@ ShellRoot {
                     Region {
                         x: 0
                         y: 0
-                        width: (screenRoot.launcherVisuallyOpen || settingsPanel.isOpen) ? screenRoot.width : 0
-                        height: (screenRoot.launcherVisuallyOpen || settingsPanel.isOpen) ? screenRoot.height : 0
+                        width: (screenRoot.launcherVisuallyOpen || settingsPanel.isOpen || powerMenu.visuallyOpen) ? screenRoot.width : 0
+                        height: (screenRoot.launcherVisuallyOpen || settingsPanel.isOpen || powerMenu.visuallyOpen) ? screenRoot.height : 0
+                    }
+
+                    // Keep the hot zone in the mask even while unavailable so
+                    // reopening on the same screen does not depend on pointer
+                    // re-entry refreshing the compositor region.
+                    Region { item: powerTrigger }
+
+                    Region {
+                        item: workspaceIndicator.enabled ? workspaceIndicator.hotZone : null
+                    }
+                    Region {
+                        item: workspaceIndicator.enabled && workspaceIndicator.shown ? workspaceIndicator.hitSurface : null
                     }
 
                     // Clock
                     Region {
-                        item: (!screenRoot.launcherVisuallyOpen && !settingsPanel.isOpen && !clockPanel.isRetracted)
+                        item: (!screenRoot.launcherVisuallyOpen && !settingsPanel.isOpen && !powerMenu.visuallyOpen && !clockPanel.isRetracted)
                             ? clockHitbox : null
                     }
 
@@ -181,24 +196,24 @@ ShellRoot {
                         x: trayPanel.visualX
                         y: trayPanel.visualY
                         width: (!screenRoot.launcherVisuallyOpen
-                                && !settingsPanel.isOpen
+                                && !settingsPanel.isOpen && !powerMenu.visuallyOpen
                                 && !trayPanel.isRetracted)
                             ? trayPanel.visualWidth : 0
                         height: (!screenRoot.launcherVisuallyOpen
-                                 && !settingsPanel.isOpen
+                                 && !settingsPanel.isOpen && !powerMenu.visuallyOpen
                                  && !trayPanel.isRetracted)
                             ? trayPanel.visualHeight : 0
                     }
 
                     // Tray edge summon zone (hot corner)
                     Region {
-                        x: (!screenRoot.launcherVisuallyOpen && !settingsPanel.isOpen)
+                        x: (!screenRoot.launcherVisuallyOpen && !settingsPanel.isOpen && !powerMenu.visuallyOpen)
                             ? screenRoot.trayEdgeCornerX : 0
-                        y: (!screenRoot.launcherVisuallyOpen && !settingsPanel.isOpen)
+                        y: (!screenRoot.launcherVisuallyOpen && !settingsPanel.isOpen && !powerMenu.visuallyOpen)
                             ? screenRoot.trayEdgeCornerY : 0
-                        width: (!screenRoot.launcherVisuallyOpen && !settingsPanel.isOpen)
+                        width: (!screenRoot.launcherVisuallyOpen && !settingsPanel.isOpen && !powerMenu.visuallyOpen)
                             ? screenRoot.trayEdgeTriggerLength : 0
-                        height: (!screenRoot.launcherVisuallyOpen && !settingsPanel.isOpen)
+                        height: (!screenRoot.launcherVisuallyOpen && !settingsPanel.isOpen && !powerMenu.visuallyOpen)
                             ? screenRoot.trayEdgeTriggerThickness : 0
                     }
 
@@ -207,11 +222,11 @@ ShellRoot {
                         x: trayPanel.popupPlateX
                         y: trayPanel.popupPlateY
                         width: (!screenRoot.launcherVisuallyOpen
-                                && !settingsPanel.isOpen
+                                && !settingsPanel.isOpen && !powerMenu.visuallyOpen
                                 && trayPanel.popupVisible)
                             ? trayPanel.popupPlateWidth : 0
                         height: (!screenRoot.launcherVisuallyOpen
-                                 && !settingsPanel.isOpen
+                                 && !settingsPanel.isOpen && !powerMenu.visuallyOpen
                                  && trayPanel.popupVisible)
                             ? trayPanel.popupPlateHeight : 0
                     }
@@ -223,6 +238,13 @@ ShellRoot {
                 Border {
                     id: borderEffect
                     anchors.fill: parent
+
+                    powerRect0: powerMenu.panelRect(0)
+                    powerRect1: powerMenu.panelRect(1)
+                    powerRect2: powerMenu.panelRect(2)
+                    powerRect3: powerMenu.panelRect(3)
+                    powerRect4: powerMenu.panelRect(4)
+                    powerSlots: powerMenu.slots
 
                     launcherX: (screenRoot.launcherVisuallyOpen || screenRoot.isSettingsActive)
                         ? screenRoot.activeCenterPanel.x : -100000
@@ -337,6 +359,37 @@ ShellRoot {
                     targetScreen: screenScope.modelData
                 }
 
+                WorkspaceIndicator {
+                    id: workspaceIndicator
+                    anchors.fill: parent
+                    z: 22
+                    targetScreen: screenScope.modelData
+                    sharedHotZoneHovered: edge === "bottom" && powerTrigger.available && powerTrigger.containsMouse
+                    suppressed: screenRoot.launcherVisuallyOpen || settingsPanel.isOpen || powerMenu.visuallyOpen
+                }
+
+                PowerMenu {
+                    id: powerMenu
+                    anchors.fill: parent
+                    z: 30
+                    targetScreen: screenScope.modelData
+                }
+
+                PowerTrigger {
+                    id: powerTrigger
+                    z: 31
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    anchors.bottom: parent.bottom
+                    availableWidth: screenRoot.width
+                    debugName: screenScope.modelData.name
+                    hoverEnabled: true
+                    available: !powerMenu.visuallyOpen && !screenRoot.launcherVisuallyOpen && !settingsPanel.isOpen
+                    onTriggered: {
+                        console.log("[shell] power trigger fired on", screenScope.modelData.name)
+                        PowerMenuController.openOn(screenScope.modelData)
+                    }
+                }
+
                 // -------------------------------------------------------------
                 // Clock zones
                 // -------------------------------------------------------------
@@ -348,7 +401,7 @@ ShellRoot {
                     y: clockPanel.isBottom ? screenRoot.height - height : 0
                     width: clockPanel.finalWidth + clockPanel.margin + Theme.borderThickness
                     height: Math.max(4, Theme.borderThickness / 2)
-                    enabled: clockPanel.mode === "subdermal" && !screenRoot.launcherVisuallyOpen && !settingsPanel.isOpen
+                    enabled: clockPanel.mode === "subdermal" && !screenRoot.launcherVisuallyOpen && !settingsPanel.isOpen && !powerMenu.visuallyOpen
                     HoverHandler {
                         onHoveredChanged: clockPanel.edgeHovered = hovered
                     }
@@ -360,7 +413,7 @@ ShellRoot {
                     y: clockPanel.mode === "subdermal" ? clockPanel.y : clockPanel.restingY
                     width: clockPanel.finalWidth
                     height: clockPanel.finalHeight
-                    enabled: !clockPanel.isRetracted && !screenRoot.launcherVisuallyOpen && !settingsPanel.isOpen
+                    enabled: !clockPanel.isRetracted && !screenRoot.launcherVisuallyOpen && !settingsPanel.isOpen && !powerMenu.visuallyOpen
 
                     HoverHandler {
                         onHoveredChanged: {
@@ -382,13 +435,13 @@ ShellRoot {
                     clockPanel.mode === "parasitic"
                     && clockPanel.isRetracted
                     && !screenRoot.launcherVisuallyOpen
-                    && !settingsPanel.isOpen
+                    && !settingsPanel.isOpen && !powerMenu.visuallyOpen
                 readonly property bool trayReturnTracking:
                     trayPanel.mode === "parasitic"
                     && trayPanel.isEvading
                     && !trayPanel.isEngaged
                     && !screenRoot.launcherVisuallyOpen
-                    && !settingsPanel.isOpen
+                    && !settingsPanel.isOpen && !powerMenu.visuallyOpen
 
                 Timer {
                     interval: 150
@@ -443,7 +496,7 @@ ShellRoot {
 
                     enabled:
                         !screenRoot.launcherVisuallyOpen
-                        && !settingsPanel.isOpen
+                        && !settingsPanel.isOpen && !powerMenu.visuallyOpen
 
                     HoverHandler {
                         enabled: trayEdgeTrigger.enabled

@@ -14,7 +14,21 @@ QtObject {
     property real screenHeight: 0
     property var slots: []
 
-    readonly property int maxSlots: Theme.tendrilMaxSlots
+    readonly property int maxSlots: panel.tendrilSlotCapacityOverride ?? Theme.tendrilMaxSlots
+    property bool fading: false
+    property bool needsUpdate: true
+    readonly property bool staticGeometry: panel.tendrilStaticGeometry ?? false
+    property Connections geometryChanges: Connections {
+        target: manager.panel
+        ignoreUnknownSignals: true
+        function onXChanged() { manager.needsUpdate = true; }
+        function onYChanged() { manager.needsUpdate = true; }
+        function onWidthChanged() { manager.needsUpdate = true; }
+        function onHeightChanged() { manager.needsUpdate = true; }
+        function onTendrilExtraCountChanged() { manager.needsUpdate = true; }
+    }
+    onScreenWidthChanged: needsUpdate = true
+    onScreenHeightChanged: needsUpdate = true
     readonly property int maxActive:
         panel.tendrilMaxActive !== undefined && panel.tendrilMaxActive > 0
         ? panel.tendrilMaxActive
@@ -92,9 +106,11 @@ QtObject {
     }
 
     onEnabledChanged: {
+        needsUpdate = true;
         if (enabled && !prevEnabled)
             initSlots();
 
+        if (!enabled) fading = slots.some(function(slot) { return slot.activation > 0.001; });
         prevEnabled = enabled;
     }
 
@@ -212,6 +228,7 @@ QtObject {
     }
 
     function desiredPointCount() {
+        if (panel.tendrilsPer100px === 0) return 0;
         var w = Math.max(panel.width, 1);
         var h = Math.max(panel.height, 1);
         var r = Math.max(
@@ -497,15 +514,15 @@ QtObject {
 
         switch (side) {
         case "top":
-            return p.tendrilMaxTop || Theme.tendrilMaxTop;
+            return p.tendrilMaxTop ?? Theme.tendrilMaxTop;
         case "right":
-            return p.tendrilMaxRight || Theme.tendrilMaxRight;
+            return p.tendrilMaxRight ?? Theme.tendrilMaxRight;
         case "bottom":
-            return p.tendrilMaxBottom || Theme.tendrilMaxBottom;
+            return p.tendrilMaxBottom ?? Theme.tendrilMaxBottom;
         case "left":
-            return p.tendrilMaxLeft || Theme.tendrilMaxLeft;
+            return p.tendrilMaxLeft ?? Theme.tendrilMaxLeft;
         default:
-            return p.tendrilMaxCorners || Theme.tendrilMaxCorners;
+            return p.tendrilMaxCorners ?? Theme.tendrilMaxCorners;
         }
     }
 
@@ -525,12 +542,15 @@ QtObject {
         var sSpeed = shrinkSpeed();
 
         if (!panelAlive()) {
+            var changed = false;
+            var stillFading = false;
             for (var d = 0; d < current.length; d++) {
                 var dead = current[d];
 
                 dead.active = false;
 
                 if (dead.activation > 0.001) {
+                    changed = true;
                     dead.tipX = dead.rootX
                               + (dead.breakTipX - dead.rootX)
                               * dead.activation;
@@ -538,10 +558,15 @@ QtObject {
                               + (dead.breakTipY - dead.rootY)
                               * dead.activation;
                     dead.activation += (0.0 - dead.activation) * sSpeed;
+                    if (dead.activation <= 0.001) {
+                        dead.activation = 0;
+                        dead.isExtra = false;
+                    } else stillFading = true;
                 }
             }
 
-            slots = current.concat();
+            if (changed) slots = current.concat();
+            fading = stillFading;
             return;
         }
 
@@ -743,13 +768,12 @@ QtObject {
                 continue;
 
             if (!slot2.active) {
-                slot2.activation = 0.02;
-                active++;
-
-                if (active <= desiredActive) {
+                if (active < desiredActive) {
                     var freeIdx = pickSpawnCandidate();
 
                     if (freeIdx >= 0) {
+                        slot2.activation = 0.02;
+                        active++;
                         var candidatePt = points[freeIdx];
                         respawnSlot(
                             slot2,
@@ -795,12 +819,22 @@ QtObject {
             ) * extraSpeed;
         }
 
+        if (staticGeometry) {
+            var unsettled = false;
+            for (var st = 0; st < current.length; ++st) {
+                var slot = current[st];
+                if (slot.active && slot.activation >= 0.999) slot.activation = 1;
+                else if (!slot.active && slot.activation <= 0.001) slot.activation = 0;
+                else unsettled = true;
+            }
+            needsUpdate = unsettled;
+        }
         slots = current.concat();
     }
 
     property Timer timer: Timer {
         interval: panel.tendrilUpdateIntervalOverride !== undefined ? panel.tendrilUpdateIntervalOverride : 33
-        running: true
+        running: manager.fading || (manager.enabled && (!manager.staticGeometry || manager.needsUpdate))
         repeat: true
         onTriggered: manager.tick()
     }
