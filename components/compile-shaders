@@ -10,6 +10,10 @@ SHADER_DIR="${1:-shaders}"
 for f in "$SHADER_DIR"/*.frag "$SHADER_DIR"/*.vert; do
     [ -e "$f" ] || continue
     out="${f}.qsb"
+    # A new asset name also invalidates Qt's cached previous shader on reload.
+    if [[ "${f##*/}" == "border.frag" ]]; then
+        out="${SHADER_DIR}/border-sharpness.frag.qsb"
+    fi
     echo "Compiling $f -> $out"
     qsb --glsl "100 es,120,150" --hlsl 50 --msl 12 -o "$out" "$f"
 done

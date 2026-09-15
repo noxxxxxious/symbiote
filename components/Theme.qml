@@ -92,6 +92,20 @@ QtObject {
     property string clockCornerPosition: Config.sAdapter.clock.position
     property string clockSlideDirection: Config.sAdapter.clock.slideDirection
 
+    // --- Tray ---
+    property string trayMode: Config.sAdapter.tray.mode
+    property string trayCornerPosition: Config.sAdapter.tray.position
+    property string traySlideDirection: Config.sAdapter.tray.slideDirection
+
+    readonly property real trayIconSize: 20
+    readonly property real trayIconPaddingX: 6
+    readonly property real trayIconPaddingY: 4
+    readonly property real traySpacing: 2
+    readonly property real trayPopupWidth: 220
+    readonly property real trayPopupPadding: 6
+    readonly property real trayPopupRowHeight: 28
+    readonly property real trayPopupSeparatorHeight: 8
+
     // --- Wallpaper ---
     readonly property string wallpaperDirectory: {
         var dir = Config.sAdapter.wallpaper.directory || "~/Pictures/Wallpapers";

@@ -20,13 +20,21 @@ FileView {
     // below instead of erroring out.
     printErrors: false
 
+    // Preserve FileView's safe atomic replacement behavior, but do not start a
+    // new QSaveFile write for every intermediate slider value. Settings controls
+    // can update dozens of times per second while dragging.
+    atomicWrites: true
+
     watchChanges: true
     onFileChanged: reload()
 
-    // If you ever add QML-side writes back to config (e.g. a settings UI),
-    // this persists them. Harmless to leave in even if you only ever hand-
-    // edit the JSON.
-    onAdapterUpdated: writeAdapter()
+    property Timer saveDebounce: Timer {
+        interval: 300
+        repeat: false
+        onTriggered: root.writeAdapter()
+    }
+
+    onAdapterUpdated: saveDebounce.restart()
 
     // External access point: other files use `Config.adapter.border.color`
     // etc. instead of reaching into `root` directly.
@@ -37,29 +45,100 @@ FileView {
 
         property JsonObject panels: JsonObject {
             property string backgroundColor: "red"
+            property bool spikesEnabled: false
+            property real spikeFrequency: 3
+            property real spikeLength: 10
+            property real spikeVariance: 0.3
+            property real spikeSharpness: 0.75
         }
 
         property JsonObject launcher: JsonObject {
+            property bool spikeOverride: false
+            property bool spikesEnabled: false
+            property real spikeFrequency: 3
+            property real spikeLength: 10
+            property real spikeVariance: 0.3
+            property real spikeSharpness: 0.75
             property string backgroundColor: "" // panels.backgroundColor override
             property bool showIcons: true
         }
 
         property JsonObject clock: JsonObject {
+            property bool spikeOverride: false
+            property bool spikesEnabled: false
+            property real spikeFrequency: 3
+            property real spikeLength: 10
+            property real spikeVariance: 0.3
+            property real spikeSharpness: 0.75
+            property string mode: "parasitic"
             property string position: "bottom-left"
             property string slideDirection: "diagonal"
             property bool extraTendrils: true
 
-            property real extraShortReach: 0.35
-            property real extraLongReach: 0.70
+            property real extraVerticalReach: 0.70
+            property real extraHorizontalReach: 0.35
 
-            property int extraShortCount: 3
-            property int extraLongCount: 2
+            property int extraVerticalCount: 2
+            property int extraHorizontalCount: 3
 
-            property real extraShortReachSpread: 0.12
-            property real extraLongReachSpread: 0.12
+            property real extraVerticalReachSpread: 0.12
+            property real extraHorizontalReachSpread: 0.12
 
-            property real extraShortTipSpread: 0.55
-            property real extraLongTipSpread: 0.55
+            property real extraVerticalTipSpread: 0.55
+            property real extraHorizontalTipSpread: 0.55
+        }
+
+        property JsonObject tray: JsonObject {
+            property bool spikeOverride: false
+            property bool spikesEnabled: false
+            property real spikeFrequency: 3
+            property real spikeLength: 10
+            property real spikeVariance: 0.3
+            property real spikeSharpness: 0.75
+            property string mode: "parasitic" // "parasitic" or "subdermal"
+            property string position: "top-right"
+            property string slideDirection: "diagonal"
+            property bool extraTendrils: true
+            property real extraVerticalReach: 0.70
+            property real extraHorizontalReach: 0.35
+            property int extraVerticalCount: 2
+            property int extraHorizontalCount: 2
+            property real extraVerticalReachSpread: 0.12
+            property real extraHorizontalReachSpread: 0.12
+            property real extraVerticalTipSpread: 0.55
+            property real extraHorizontalTipSpread: 0.55
+
+            // Tray popup menu tendrils use screen-border orientation:
+            // horizontal = top/bottom border, vertical = left/right border.
+            property int menuVerticalCount: 2
+            property int menuHorizontalCount: 2
+            property real menuVerticalReach: 0.36
+            property real menuHorizontalReach: 0.30
+            property real menuVerticalReachSpread: 0.14
+            property real menuHorizontalReachSpread: 0.12
+            property real menuVerticalTipSpread: 0.44
+            property real menuHorizontalTipSpread: 0.55
+            property real menuMaxLength: 800
+            property string menuPreviewText: "Spreading Infection, Deeper Into Host, Assimilation Stable"
+            property real menuScreenInset: 14
+        }
+
+        property JsonObject trayMenu: JsonObject {
+            property bool spikeOverride: false
+            property bool spikesEnabled: false
+            property real spikeFrequency: 3
+            property real spikeLength: 10
+            property real spikeVariance: 0.3
+            property real spikeSharpness: 0.75
+        }
+
+        property JsonObject settingsPanel: JsonObject {
+            property bool spikeOverride: false
+            property bool spikesEnabled: false
+            property real spikeFrequency: 3
+            property real spikeLength: 10
+            property real spikeVariance: 0.3
+            property real spikeSharpness: 0.75
         }
 
         property JsonObject text: JsonObject {

@@ -6,6 +6,7 @@ singleton AppUsage 1.0 AppUsage.qml
 singleton HyprState 1.0 HyprState.qml
 singleton LauncherController 1.0 LauncherController.qml
 singleton SettingsController 1.0 SettingsController.qml
+singleton TrayIcons 1.0 TrayIcons.qml
 
 Border 1.0 Border.qml
 AnimatedPanel 1.0 AnimatedPanel.qml
@@ -16,3 +17,4 @@ Exclusions 1.0 Exclusions.qml
 Settings 1.0 Settings.qml
 FeatheredRect 1.0 FeatheredRect.qml
 Wallpaper 1.0 Wallpaper.qml
+Tray 1.0 Tray.qml

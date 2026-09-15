@@ -368,11 +368,11 @@ QtObject {
 
     function extraSpecs() {
         if (!extraConnectionsEnabled()
-                || typeof panel.extraClockTendrilSpecs !== "function") {
+                || typeof panel.extraTendrilSpecs !== "function") {
             return [];
         }
 
-        return panel.extraClockTendrilSpecs();
+        return panel.extraTendrilSpecs();
     }
 
     function extraMaxLengthRange() {
@@ -517,122 +517,6 @@ QtObject {
             );
 
         return Theme.tendrilAttachDistance;
-    }
-
-    // Returns manually targeted long tendrils for the Clock only.
-    //
-    // Slots always store root = border endpoint and tip = clock endpoint.
-    // The Clock component enables this feature through
-    // `tendrilExtraConnections`.
-    function extraClockTendrilSpecs() {
-        if (!panel.tendrilExtraConnections)
-            return [];
-
-        var innerLeft = Theme.borderThickness;
-        var innerTop = Theme.borderThickness;
-        var innerRight = screenWidth - Theme.borderThickness;
-        var innerBottom = screenHeight - Theme.borderThickness;
-
-        var usableWidth = Math.max(1, innerRight - innerLeft);
-        var usableHeight = Math.max(1, innerBottom - innerTop);
-
-        var shortReach = Math.max(
-            0.05,
-            Math.min(0.95, panel.tendrilExtraShortReach)
-        );
-
-        var longReach = Math.max(
-            0.05,
-            Math.min(0.95, panel.tendrilExtraLongReach)
-        );
-
-        var panelCenterX = panel.x + panel.width * 0.5;
-        var panelCenterY = panel.y + panel.height * 0.5;
-
-        var isLeft = panelCenterX < screenWidth * 0.5;
-        var isTop = panelCenterY < screenHeight * 0.5;
-
-        var specs = [];
-
-        if (isTop && isLeft) {
-            // Top-left:
-            // Right clock edge -> top border, short reach.
-            specs.push({
-                side: "extra-short",
-                rootX: innerLeft + usableWidth * shortReach,
-                rootY: innerTop,
-                tipX: panel.x + panel.width,
-                tipY: panel.y + panel.height * 0.50
-            });
-
-            // Bottom clock edge -> left border, long reach.
-            specs.push({
-                side: "extra-long",
-                rootX: innerLeft,
-                rootY: innerTop + usableHeight * longReach,
-                tipX: panel.x + panel.width * 0.50,
-                tipY: panel.y + panel.height
-            });
-        } else if (isTop && !isLeft) {
-            // Top-right:
-            // Left clock edge -> top border, short reach.
-            specs.push({
-                side: "extra-short",
-                rootX: innerRight - usableWidth * shortReach,
-                rootY: innerTop,
-                tipX: panel.x,
-                tipY: panel.y + panel.height * 0.50
-            });
-
-            // Bottom clock edge -> right border, long reach.
-            specs.push({
-                side: "extra-long",
-                rootX: innerRight,
-                rootY: innerTop + usableHeight * longReach,
-                tipX: panel.x + panel.width * 0.50,
-                tipY: panel.y + panel.height
-            });
-        } else if (!isTop && !isLeft) {
-            // Bottom-right:
-            // Left clock edge -> bottom border, short reach.
-            specs.push({
-                side: "extra-short",
-                rootX: innerRight - usableWidth * shortReach,
-                rootY: innerBottom,
-                tipX: panel.x,
-                tipY: panel.y + panel.height * 0.50
-            });
-
-            // Top clock edge -> right border, long reach.
-            specs.push({
-                side: "extra-long",
-                rootX: innerRight,
-                rootY: innerBottom - usableHeight * longReach,
-                tipX: panel.x + panel.width * 0.50,
-                tipY: panel.y
-            });
-        } else {
-            // Bottom-left:
-            // Top clock edge -> left border, long reach.
-            specs.push({
-                side: "extra-long",
-                rootX: innerLeft,
-                rootY: innerBottom - usableHeight * longReach,
-                tipX: panel.x + panel.width * 0.50,
-                tipY: panel.y
-            });
-
-            // Right clock edge -> bottom border, short reach.
-            specs.push({
-                side: "extra-short",
-                rootX: innerLeft + usableWidth * shortReach,
-                rootY: innerBottom,
-                tipX: panel.x + panel.width,
-                tipY: panel.y + panel.height * 0.50
-            });
-        }
-
-        return specs;
     }
 
     function tick() {
@@ -915,7 +799,7 @@ QtObject {
     }
 
     property Timer timer: Timer {
-        interval: 33
+        interval: panel.tendrilUpdateIntervalOverride !== undefined ? panel.tendrilUpdateIntervalOverride : 33
         running: true
         repeat: true
         onTriggered: manager.tick()

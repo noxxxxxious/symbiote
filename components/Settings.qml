@@ -61,6 +61,8 @@ Item {
     property string currentTab: "All"
     property string searchQuery: ""
 
+    function requestTrayMenuPreview() { if (root.isOpen) SettingsController.requestTrayMenuPreview() }
+
     Keys.onEscapePressed: SettingsController.close()
 
     function middleTruncate(str, maxLen) {
@@ -215,7 +217,7 @@ Item {
                         }
 
                         Repeater {
-                            model: ["All", "Panels", "Launcher", "Clock", "Text", "Border", "Shadows", "Wallpaper"]
+                            model: ["All", "Panels", "Launcher", "Clock", "Tray", "Settings", "Text", "Border", "Shadows", "Wallpaper"]
 
                             delegate: Rectangle {
                                 id: tabBtn
@@ -310,6 +312,46 @@ Item {
                                 }
                             }
 
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                visible: contentCol.isTab("Panels") && contentCol.matches("Panels", "Panel Spikes Enable Frequency Length Sharpness Variance")
+                                Text { text: "DEFAULT PANEL SPIKES"; color: Theme.textColorAccent; font.bold: true; font.pixelSize: 12 }
+                                SettingRow {
+                                    visible: true
+                                    label: "Enable Spikes"; isBool: true
+                                    boolVal: Config.sAdapter.panels.spikesEnabled
+                                    onCommit: function(value) { Config.sAdapter.panels.spikesEnabled = value; }
+                                }
+                                SettingRow {
+                                    visible: Config.sAdapter.panels.spikesEnabled
+                                    label: "Frequency (per 100 px)"; isNum: true
+                                    numMin: 0.5; numMax: 10; numStep: 0.5
+                                    value: Config.sAdapter.panels.spikeFrequency
+                                    onCommit: function(value) { Config.sAdapter.panels.spikeFrequency = Number(value); }
+                                }
+                                SettingRow {
+                                    visible: Config.sAdapter.panels.spikesEnabled
+                                    label: "Spike Length (px)"; isNum: true
+                                    numMin: 0; numMax: 40; numStep: 1
+                                    value: Config.sAdapter.panels.spikeLength
+                                    onCommit: function(value) { Config.sAdapter.panels.spikeLength = Number(value); }
+                                }
+                                SettingRow {
+                                    visible: Config.sAdapter.panels.spikesEnabled
+                                    label: "Spike Sharpness"; isNum: true
+                                    numMin: 0; numMax: 1; numStep: 0.05
+                                    value: Config.sAdapter.panels.spikeSharpness
+                                    onCommit: function(value) { Config.sAdapter.panels.spikeSharpness = Number(value); }
+                                }
+                                SettingRow {
+                                    visible: Config.sAdapter.panels.spikesEnabled
+                                    label: "Length Variance"; isNum: true
+                                    numMin: 0; numMax: 1; numStep: 0.05
+                                    value: Config.sAdapter.panels.spikeVariance
+                                    onCommit: function(value) { Config.sAdapter.panels.spikeVariance = Number(value); }
+                                }
+                            }
+
                             // --- Launcher ---
                             ColumnLayout {
                                 visible: contentCol.isTab("Launcher") && (contentCol.matches("Launcher", "Icons") || contentCol.matches("Launcher", "Background"))
@@ -328,6 +370,51 @@ Item {
                                 }
                             }
 
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                visible: contentCol.isTab("Launcher") && contentCol.matches("Launcher", "Launcher Spikes Frequency Length Sharpness Variance Override")
+                                Text { text: "LAUNCHER SPIKES"; color: Theme.textColorAccent; font.bold: true; font.pixelSize: 12 }
+                                SettingRow {
+                                    label: "Override Global Spikes"; isBool: true
+                                    boolVal: Config.sAdapter.launcher.spikeOverride
+                                    onCommit: function(value) { Config.sAdapter.launcher.spikeOverride = value; }
+                                }
+                                SettingRow {
+                                    visible: Config.sAdapter.launcher.spikeOverride
+                                    label: "Enable Spikes"; isBool: true
+                                    boolVal: Config.sAdapter.launcher.spikesEnabled
+                                    onCommit: function(value) { Config.sAdapter.launcher.spikesEnabled = value; }
+                                }
+                                SettingRow {
+                                    visible: Config.sAdapter.launcher.spikeOverride && Config.sAdapter.launcher.spikesEnabled
+                                    label: "Frequency (per 100 px)"; isNum: true
+                                    numMin: 0.5; numMax: 10; numStep: 0.5
+                                    value: Config.sAdapter.launcher.spikeFrequency
+                                    onCommit: function(value) { Config.sAdapter.launcher.spikeFrequency = Number(value); }
+                                }
+                                SettingRow {
+                                    visible: Config.sAdapter.launcher.spikeOverride && Config.sAdapter.launcher.spikesEnabled
+                                    label: "Spike Length (px)"; isNum: true
+                                    numMin: 0; numMax: 40; numStep: 1
+                                    value: Config.sAdapter.launcher.spikeLength
+                                    onCommit: function(value) { Config.sAdapter.launcher.spikeLength = Number(value); }
+                                }
+                                SettingRow {
+                                    visible: Config.sAdapter.launcher.spikeOverride && Config.sAdapter.launcher.spikesEnabled
+                                    label: "Spike Sharpness"; isNum: true
+                                    numMin: 0; numMax: 1; numStep: 0.05
+                                    value: Config.sAdapter.launcher.spikeSharpness
+                                    onCommit: function(value) { Config.sAdapter.launcher.spikeSharpness = Number(value); }
+                                }
+                                SettingRow {
+                                    visible: Config.sAdapter.launcher.spikeOverride && Config.sAdapter.launcher.spikesEnabled
+                                    label: "Length Variance"; isNum: true
+                                    numMin: 0; numMax: 1; numStep: 0.05
+                                    value: Config.sAdapter.launcher.spikeVariance
+                                    onCommit: function(value) { Config.sAdapter.launcher.spikeVariance = Number(value); }
+                                }
+                            }
+
                             // --- Clock ---
                             ColumnLayout {
                                 visible: contentCol.isTab("Clock")
@@ -335,8 +422,8 @@ Item {
                                           contentCol.matches("Clock", "Position")
                                           || contentCol.matches("Clock", "Slide Direction")
                                           || contentCol.matches("Clock", "Extra")
-                                          || contentCol.matches("Clock", "Short")
-                                          || contentCol.matches("Clock", "Long")
+                                          || contentCol.matches("Clock", "Vertical")
+                                          || contentCol.matches("Clock", "Horizontal")
                                           || contentCol.matches("Clock", "Reach")
                                           || contentCol.matches("Clock", "Count")
                                           || contentCol.matches("Clock", "Spread")
@@ -392,114 +479,615 @@ Item {
 
                                 SettingRow {
                                     visible: Config.sAdapter.clock.extraTendrils
-                                          && contentCol.matches("Clock", "Short", "Reach")
-                                    label: "Short Reach"
+                                          && contentCol.matches("Clock", "Vertical", "Reach")
+                                    label: "Vertical Reach"
                                     isNum: true
                                     numMin: 0.05
                                     numMax: 0.95
                                     numStep: 0.01
-                                    value: Config.sAdapter.clock.extraShortReach
+                                    value: Config.sAdapter.clock.extraVerticalReach
                                     onCommit: function(value) {
-                                        Config.sAdapter.clock.extraShortReach = Number(value);
+                                        Config.sAdapter.clock.extraVerticalReach = Number(value);
                                     }
                                 }
 
                                 SettingRow {
                                     visible: Config.sAdapter.clock.extraTendrils
-                                          && contentCol.matches("Clock", "Long", "Reach")
-                                    label: "Long Reach"
+                                          && contentCol.matches("Clock", "Horizontal", "Reach")
+                                    label: "Horizontal Reach"
                                     isNum: true
                                     numMin: 0.05
                                     numMax: 0.95
                                     numStep: 0.01
-                                    value: Config.sAdapter.clock.extraLongReach
+                                    value: Config.sAdapter.clock.extraHorizontalReach
                                     onCommit: function(value) {
-                                        Config.sAdapter.clock.extraLongReach = Number(value);
+                                        Config.sAdapter.clock.extraHorizontalReach = Number(value);
                                     }
                                 }
 
                                 SettingRow {
                                     visible: Config.sAdapter.clock.extraTendrils
-                                          && contentCol.matches("Clock", "Short", "Count")
-                                    label: "Short Count"
+                                          && contentCol.matches("Clock", "Vertical", "Count")
+                                    label: "Vertical Count"
                                     isNum: true
                                     numMin: 0
                                     numMax: 12
                                     numStep: 1
-                                    value: Config.sAdapter.clock.extraShortCount
+                                    value: Config.sAdapter.clock.extraVerticalCount
                                     onCommit: function(value) {
-                                        Config.sAdapter.clock.extraShortCount = Math.round(Number(value));
+                                        Config.sAdapter.clock.extraVerticalCount = Math.round(Number(value));
                                     }
                                 }
 
                                 SettingRow {
                                     visible: Config.sAdapter.clock.extraTendrils
-                                          && contentCol.matches("Clock", "Long", "Count")
-                                    label: "Long Count"
+                                          && contentCol.matches("Clock", "Horizontal", "Count")
+                                    label: "Horizontal Count"
                                     isNum: true
                                     numMin: 0
                                     numMax: 12
                                     numStep: 1
-                                    value: Config.sAdapter.clock.extraLongCount
+                                    value: Config.sAdapter.clock.extraHorizontalCount
                                     onCommit: function(value) {
-                                        Config.sAdapter.clock.extraLongCount = Math.round(Number(value));
+                                        Config.sAdapter.clock.extraHorizontalCount = Math.round(Number(value));
                                     }
                                 }
 
                                 SettingRow {
                                     visible: Config.sAdapter.clock.extraTendrils
-                                          && contentCol.matches("Clock", "Short", "Reach", "Spread")
-                                    label: "Short Root Spread"
+                                          && contentCol.matches("Clock", "Vertical", "Reach", "Spread")
+                                    label: "Vertical Root Spread"
                                     isNum: true
                                     numMin: 0.0
                                     numMax: 0.90
                                     numStep: 0.01
-                                    value: Config.sAdapter.clock.extraShortReachSpread
+                                    value: Config.sAdapter.clock.extraVerticalReachSpread
                                     onCommit: function(value) {
-                                        Config.sAdapter.clock.extraShortReachSpread = Number(value);
+                                        Config.sAdapter.clock.extraVerticalReachSpread = Number(value);
                                     }
                                 }
 
                                 SettingRow {
                                     visible: Config.sAdapter.clock.extraTendrils
-                                          && contentCol.matches("Clock", "Long", "Reach", "Spread")
-                                    label: "Long Root Spread"
+                                          && contentCol.matches("Clock", "Horizontal", "Reach", "Spread")
+                                    label: "Horizontal Root Spread"
                                     isNum: true
                                     numMin: 0.0
                                     numMax: 0.90
                                     numStep: 0.01
-                                    value: Config.sAdapter.clock.extraLongReachSpread
+                                    value: Config.sAdapter.clock.extraHorizontalReachSpread
                                     onCommit: function(value) {
-                                        Config.sAdapter.clock.extraLongReachSpread = Number(value);
+                                        Config.sAdapter.clock.extraHorizontalReachSpread = Number(value);
                                     }
                                 }
 
                                 SettingRow {
                                     visible: Config.sAdapter.clock.extraTendrils
-                                          && contentCol.matches("Clock", "Short", "Tip", "Spread")
-                                    label: "Short Tip Spread"
+                                          && contentCol.matches("Clock", "Vertical", "Tip", "Spread")
+                                    label: "Vertical Tip Spread"
                                     isNum: true
                                     numMin: 0.0
                                     numMax: 0.90
                                     numStep: 0.01
-                                    value: Config.sAdapter.clock.extraShortTipSpread
+                                    value: Config.sAdapter.clock.extraVerticalTipSpread
                                     onCommit: function(value) {
-                                        Config.sAdapter.clock.extraShortTipSpread = Number(value);
+                                        Config.sAdapter.clock.extraVerticalTipSpread = Number(value);
                                     }
                                 }
 
                                 SettingRow {
                                     visible: Config.sAdapter.clock.extraTendrils
-                                          && contentCol.matches("Clock", "Long", "Tip", "Spread")
-                                    label: "Long Tip Spread"
+                                          && contentCol.matches("Clock", "Horizontal", "Tip", "Spread")
+                                    label: "Horizontal Tip Spread"
                                     isNum: true
                                     numMin: 0.0
                                     numMax: 0.90
                                     numStep: 0.01
-                                    value: Config.sAdapter.clock.extraLongTipSpread
+                                    value: Config.sAdapter.clock.extraHorizontalTipSpread
                                     onCommit: function(value) {
-                                        Config.sAdapter.clock.extraLongTipSpread = Number(value);
+                                        Config.sAdapter.clock.extraHorizontalTipSpread = Number(value);
                                     }
+                                }
+                            }
+
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                visible: contentCol.isTab("Clock") && contentCol.matches("Clock", "Mode")
+                                SettingRow {
+                                    label: "Clock Mode"
+                                    isEnum: true
+                                    enumOptions: ["parasitic", "subdermal"]
+                                    value: Config.sAdapter.clock.mode
+                                    onCommit: function(value) { Config.sAdapter.clock.mode = value; }
+                                }
+                            }
+
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                visible: contentCol.isTab("Clock") && contentCol.matches("Clock", "Clock Spikes Frequency Length Sharpness Variance Override")
+                                Text { text: "CLOCK SPIKES"; color: Theme.textColorAccent; font.bold: true; font.pixelSize: 12 }
+                                SettingRow {
+                                    label: "Override Global Spikes"; isBool: true
+                                    boolVal: Config.sAdapter.clock.spikeOverride
+                                    onCommit: function(value) { Config.sAdapter.clock.spikeOverride = value; }
+                                }
+                                SettingRow {
+                                    visible: Config.sAdapter.clock.spikeOverride
+                                    label: "Enable Spikes"; isBool: true
+                                    boolVal: Config.sAdapter.clock.spikesEnabled
+                                    onCommit: function(value) { Config.sAdapter.clock.spikesEnabled = value; }
+                                }
+                                SettingRow {
+                                    visible: Config.sAdapter.clock.spikeOverride && Config.sAdapter.clock.spikesEnabled
+                                    label: "Frequency (per 100 px)"; isNum: true
+                                    numMin: 0.5; numMax: 10; numStep: 0.5
+                                    value: Config.sAdapter.clock.spikeFrequency
+                                    onCommit: function(value) { Config.sAdapter.clock.spikeFrequency = Number(value); }
+                                }
+                                SettingRow {
+                                    visible: Config.sAdapter.clock.spikeOverride && Config.sAdapter.clock.spikesEnabled
+                                    label: "Spike Length (px)"; isNum: true
+                                    numMin: 0; numMax: 40; numStep: 1
+                                    value: Config.sAdapter.clock.spikeLength
+                                    onCommit: function(value) { Config.sAdapter.clock.spikeLength = Number(value); }
+                                }
+                                SettingRow {
+                                    visible: Config.sAdapter.clock.spikeOverride && Config.sAdapter.clock.spikesEnabled
+                                    label: "Spike Sharpness"; isNum: true
+                                    numMin: 0; numMax: 1; numStep: 0.05
+                                    value: Config.sAdapter.clock.spikeSharpness
+                                    onCommit: function(value) { Config.sAdapter.clock.spikeSharpness = Number(value); }
+                                }
+                                SettingRow {
+                                    visible: Config.sAdapter.clock.spikeOverride && Config.sAdapter.clock.spikesEnabled
+                                    label: "Length Variance"; isNum: true
+                                    numMin: 0; numMax: 1; numStep: 0.05
+                                    value: Config.sAdapter.clock.spikeVariance
+                                    onCommit: function(value) { Config.sAdapter.clock.spikeVariance = Number(value); }
+                                }
+                            }
+
+                            // -------------------------------------------------------------------------
+                            // Tray
+                            // -------------------------------------------------------------------------
+                            ColumnLayout {
+                                visible: contentCol.isTab("Tray")
+                                      && (
+                                          contentCol.matches("Tray", "Mode")
+                                          || contentCol.matches("Tray", "Position")
+                                          || contentCol.matches("Tray", "Slide")
+                                          || contentCol.matches("Tray", "Extra")
+                                          || contentCol.matches("Tray", "Vertical")
+                                          || contentCol.matches("Tray", "Horizontal")
+                                          || contentCol.matches("Tray", "Reach")
+                                          || contentCol.matches("Tray", "Count")
+                                          || contentCol.matches("Tray", "Spread")
+                                          || contentCol.matches("Tray", "Tip")
+                                          || contentCol.matches("Tray", "Menu")
+                                          || contentCol.matches("Tray", "Inset")
+                                          || contentCol.matches("Tray", "Length")
+                                      )
+
+                                Layout.fillWidth: true
+                                spacing: 8
+
+                                Text {
+                                    text: "TRAY"
+                                    color: Theme.textColorAccent
+                                    font.bold: true
+                                    font.pixelSize: 12
+                                }
+
+                                SettingRow {
+                                    label: "View Mode"
+                                    isEnum: true
+                                    enumOptions: ["parasitic", "subdermal"]
+                                    value: Config.sAdapter.tray.mode
+
+                                    onCommit: function(value) {
+                                        Config.sAdapter.tray.mode = value
+                                    }
+                                }
+
+                                SettingRow {
+                                    label: "Corner Position"
+                                    isEnum: true
+                                    enumOptions: [
+                                        "top-left",
+                                        "top-right",
+                                        "bottom-left",
+                                        "bottom-right"
+                                    ]
+                                    value: Config.sAdapter.tray.position
+
+                                    onCommit: function(value) {
+                                        Config.sAdapter.tray.position = value
+                                        root.requestTrayMenuPreview()
+                                    }
+                                }
+
+                                SettingRow {
+                                    label: "Slide Direction"
+                                    isEnum: true
+                                    enumOptions: ["diagonal", "vertical", "horizontal"]
+                                    value: Config.sAdapter.tray.slideDirection
+
+                                    onCommit: function(value) {
+                                        Config.sAdapter.tray.slideDirection = value
+                                    }
+                                }
+
+                                SettingRow {
+                                    label: "Extra Tendrils"
+                                    isBool: true
+                                    boolVal: Config.sAdapter.tray.extraTendrils
+
+                                    onCommit: function(value) {
+                                        Config.sAdapter.tray.extraTendrils = value
+                                    }
+                                }
+
+                                SettingRow {
+                                    visible: Config.sAdapter.tray.extraTendrils
+                                    label: "Vertical Reach"
+                                    isNum: true
+                                    numMin: 0.05
+                                    numMax: 0.95
+                                    numStep: 0.01
+                                    value: Config.sAdapter.tray.extraVerticalReach
+
+                                    onCommit: function(value) {
+                                        Config.sAdapter.tray.extraVerticalReach = Number(value)
+                                    }
+                                }
+
+                                SettingRow {
+                                    visible: Config.sAdapter.tray.extraTendrils
+                                    label: "Horizontal Reach"
+                                    isNum: true
+                                    numMin: 0.05
+                                    numMax: 0.95
+                                    numStep: 0.01
+                                    value: Config.sAdapter.tray.extraHorizontalReach
+
+                                    onCommit: function(value) {
+                                        Config.sAdapter.tray.extraHorizontalReach = Number(value)
+                                    }
+                                }
+
+                                SettingRow {
+                                    visible: Config.sAdapter.tray.extraTendrils
+                                    label: "Vertical Count"
+                                    isNum: true
+                                    numMin: 0
+                                    numMax: 12
+                                    numStep: 1
+                                    value: Config.sAdapter.tray.extraVerticalCount
+
+                                    onCommit: function(value) {
+                                        Config.sAdapter.tray.extraVerticalCount = Math.round(Number(value))
+                                    }
+                                }
+
+                                SettingRow {
+                                    visible: Config.sAdapter.tray.extraTendrils
+                                    label: "Horizontal Count"
+                                    isNum: true
+                                    numMin: 0
+                                    numMax: 12
+                                    numStep: 1
+                                    value: Config.sAdapter.tray.extraHorizontalCount
+
+                                    onCommit: function(value) {
+                                        Config.sAdapter.tray.extraHorizontalCount = Math.round(Number(value))
+                                    }
+                                }
+
+                                SettingRow {
+                                    visible: Config.sAdapter.tray.extraTendrils
+                                    label: "Vertical Root Spread"
+                                    isNum: true
+                                    numMin: 0
+                                    numMax: 0.90
+                                    numStep: 0.01
+                                    value: Config.sAdapter.tray.extraVerticalReachSpread
+
+                                    onCommit: function(value) {
+                                        Config.sAdapter.tray.extraVerticalReachSpread = Number(value)
+                                    }
+                                }
+
+                                SettingRow {
+                                    visible: Config.sAdapter.tray.extraTendrils
+                                    label: "Horizontal Root Spread"
+                                    isNum: true
+                                    numMin: 0
+                                    numMax: 0.90
+                                    numStep: 0.01
+                                    value: Config.sAdapter.tray.extraHorizontalReachSpread
+
+                                    onCommit: function(value) {
+                                        Config.sAdapter.tray.extraHorizontalReachSpread = Number(value)
+                                    }
+                                }
+
+                                SettingRow {
+                                    visible: Config.sAdapter.tray.extraTendrils
+                                    label: "Vertical Tip Spread"
+                                    isNum: true
+                                    numMin: 0
+                                    numMax: 0.90
+                                    numStep: 0.01
+                                    value: Config.sAdapter.tray.extraVerticalTipSpread
+
+                                    onCommit: function(value) {
+                                        Config.sAdapter.tray.extraVerticalTipSpread = Number(value)
+                                    }
+                                }
+
+                                SettingRow {
+                                    visible: Config.sAdapter.tray.extraTendrils
+                                    label: "Horizontal Tip Spread"
+                                    isNum: true
+                                    numMin: 0
+                                    numMax: 0.90
+                                    numStep: 0.01
+                                    value: Config.sAdapter.tray.extraHorizontalTipSpread
+
+                                    onCommit: function(value) { Config.sAdapter.tray.extraHorizontalTipSpread = Number(value) }
+                                }
+
+                                Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: "#33ffffff"; Layout.topMargin: 8; Layout.bottomMargin: 4 }
+                                Text { text: "TRAY MENU TENDRILS"; color: Theme.textColorAccent; font.bold: true; font.pixelSize: 12 }
+                                Text { Layout.fillWidth: true; text: "Horizontal = top/bottom screen border. Vertical = left/right screen border."; color: Theme.textColorSoft; font.pixelSize: 11; wrapMode: Text.WordWrap }
+
+                                Rectangle {
+                                    Layout.preferredWidth: 150
+                                    Layout.preferredHeight: 30
+                                    radius: 6
+                                    color: previewMouse.containsMouse ? "#33ffffff" : "#24273a"
+                                    border.color: Theme.textColorAccent
+                                    Text { anchors.centerIn: parent; text: "PREVIEW MENU"; color: Theme.textColorAccent; font.pixelSize: 12; font.bold: true }
+                                    MouseArea { id: previewMouse; anchors.fill: parent; hoverEnabled: true; onClicked: root.requestTrayMenuPreview() }
+                                }
+
+                                Text { text: "Preview entries (separate with commas)"; color: Theme.textColorSoft; font.pixelSize: 12 }
+                                TextField {
+                                    Layout.fillWidth: true
+                                    text: Config.sAdapter.tray.menuPreviewText
+                                    placeholderText: "Spreading Infection, Deeper Into Host, Assimilation Stable"
+                                    color: Theme.textColor
+                                    background: Rectangle { color: "#24273a"; radius: 6; border.color: "#313244" }
+                                    onTextEdited: {
+                                        Config.sAdapter.tray.menuPreviewText = text
+                                        root.requestTrayMenuPreview()
+                                    }
+                                }
+
+                                SettingRow {
+                                    label: "Menu Screen Inset"
+                                    isNum: true
+                                    numMin: 0
+                                    numMax: 64
+                                    numStep: 1
+                                    value: Config.sAdapter.tray.menuScreenInset
+                                    onCommit: function(value) { Config.sAdapter.tray.menuScreenInset = Number(value); root.requestTrayMenuPreview() }
+                                }
+                                SettingRow {
+                                    label: "Menu Max Length"
+                                    isNum: true
+                                    numMin: 100
+                                    numMax: 3000
+                                    numStep: 25
+                                    value: Config.sAdapter.tray.menuMaxLength
+                                    onCommit: function(value) { Config.sAdapter.tray.menuMaxLength = Number(value); root.requestTrayMenuPreview() }
+                                }
+                                SettingRow {
+                                    label: "Menu Vertical Reach"
+                                    isNum: true
+                                    numMin: 0.02
+                                    numMax: 0.48
+                                    numStep: 0.01
+                                    value: Config.sAdapter.tray.menuVerticalReach
+                                    onCommit: function(value) { Config.sAdapter.tray.menuVerticalReach = Number(value); root.requestTrayMenuPreview() }
+                                }
+                                SettingRow {
+                                    label: "Menu Horizontal Reach"
+                                    isNum: true
+                                    numMin: 0.02
+                                    numMax: 0.48
+                                    numStep: 0.01
+                                    value: Config.sAdapter.tray.menuHorizontalReach
+                                    onCommit: function(value) { Config.sAdapter.tray.menuHorizontalReach = Number(value); root.requestTrayMenuPreview() }
+                                }
+                                SettingRow {
+                                    label: "Menu Vertical Count"
+                                    isNum: true
+                                    numMin: 0
+                                    numMax: 8
+                                    numStep: 1
+                                    value: Config.sAdapter.tray.menuVerticalCount
+                                    onCommit: function(value) { Config.sAdapter.tray.menuVerticalCount = Math.round(Number(value)); root.requestTrayMenuPreview() }
+                                }
+                                SettingRow {
+                                    label: "Menu Horizontal Count"
+                                    isNum: true
+                                    numMin: 0
+                                    numMax: 8
+                                    numStep: 1
+                                    value: Config.sAdapter.tray.menuHorizontalCount
+                                    onCommit: function(value) { Config.sAdapter.tray.menuHorizontalCount = Math.round(Number(value)); root.requestTrayMenuPreview() }
+                                }
+                                SettingRow {
+                                    label: "Menu Vertical Root Spread"
+                                    isNum: true
+                                    numMin: 0
+                                    numMax: 0.90
+                                    numStep: 0.01
+                                    value: Config.sAdapter.tray.menuVerticalReachSpread
+                                    onCommit: function(value) { Config.sAdapter.tray.menuVerticalReachSpread = Number(value); root.requestTrayMenuPreview() }
+                                }
+                                SettingRow {
+                                    label: "Menu Horizontal Root Spread"
+                                    isNum: true
+                                    numMin: 0
+                                    numMax: 0.90
+                                    numStep: 0.01
+                                    value: Config.sAdapter.tray.menuHorizontalReachSpread
+                                    onCommit: function(value) { Config.sAdapter.tray.menuHorizontalReachSpread = Number(value); root.requestTrayMenuPreview() }
+                                }
+                                SettingRow {
+                                    label: "Menu Vertical Tip Spread"
+                                    isNum: true
+                                    numMin: 0
+                                    numMax: 0.90
+                                    numStep: 0.01
+                                    value: Config.sAdapter.tray.menuVerticalTipSpread
+                                    onCommit: function(value) { Config.sAdapter.tray.menuVerticalTipSpread = Number(value); root.requestTrayMenuPreview() }
+                                }
+                                SettingRow {
+                                    label: "Menu Horizontal Tip Spread"
+                                    isNum: true
+                                    numMin: 0
+                                    numMax: 0.90
+                                    numStep: 0.01
+                                    value: Config.sAdapter.tray.menuHorizontalTipSpread
+                                    onCommit: function(value) { Config.sAdapter.tray.menuHorizontalTipSpread = Number(value); root.requestTrayMenuPreview() }
+                                }
+                            }
+
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                visible: contentCol.isTab("Tray") && contentCol.matches("Tray", "Tray Spikes Frequency Length Sharpness Variance Override")
+                                Text { text: "TRAY SPIKES"; color: Theme.textColorAccent; font.bold: true; font.pixelSize: 12 }
+                                SettingRow {
+                                    label: "Override Global Spikes"; isBool: true
+                                    boolVal: Config.sAdapter.tray.spikeOverride
+                                    onCommit: function(value) { Config.sAdapter.tray.spikeOverride = value; }
+                                }
+                                SettingRow {
+                                    visible: Config.sAdapter.tray.spikeOverride
+                                    label: "Enable Spikes"; isBool: true
+                                    boolVal: Config.sAdapter.tray.spikesEnabled
+                                    onCommit: function(value) { Config.sAdapter.tray.spikesEnabled = value; }
+                                }
+                                SettingRow {
+                                    visible: Config.sAdapter.tray.spikeOverride && Config.sAdapter.tray.spikesEnabled
+                                    label: "Frequency (per 100 px)"; isNum: true
+                                    numMin: 0.5; numMax: 10; numStep: 0.5
+                                    value: Config.sAdapter.tray.spikeFrequency
+                                    onCommit: function(value) { Config.sAdapter.tray.spikeFrequency = Number(value); }
+                                }
+                                SettingRow {
+                                    visible: Config.sAdapter.tray.spikeOverride && Config.sAdapter.tray.spikesEnabled
+                                    label: "Spike Length (px)"; isNum: true
+                                    numMin: 0; numMax: 40; numStep: 1
+                                    value: Config.sAdapter.tray.spikeLength
+                                    onCommit: function(value) { Config.sAdapter.tray.spikeLength = Number(value); }
+                                }
+                                SettingRow {
+                                    visible: Config.sAdapter.tray.spikeOverride && Config.sAdapter.tray.spikesEnabled
+                                    label: "Spike Sharpness"; isNum: true
+                                    numMin: 0; numMax: 1; numStep: 0.05
+                                    value: Config.sAdapter.tray.spikeSharpness
+                                    onCommit: function(value) { Config.sAdapter.tray.spikeSharpness = Number(value); }
+                                }
+                                SettingRow {
+                                    visible: Config.sAdapter.tray.spikeOverride && Config.sAdapter.tray.spikesEnabled
+                                    label: "Length Variance"; isNum: true
+                                    numMin: 0; numMax: 1; numStep: 0.05
+                                    value: Config.sAdapter.tray.spikeVariance
+                                    onCommit: function(value) { Config.sAdapter.tray.spikeVariance = Number(value); }
+                                }
+                            }
+
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                visible: contentCol.isTab("Tray") && contentCol.matches("Tray", "Tray Menu Spikes Frequency Length Sharpness Variance Override")
+                                Text { text: "TRAY MENU SPIKES"; color: Theme.textColorAccent; font.bold: true; font.pixelSize: 12 }
+                                SettingRow {
+                                    label: "Override Global Spikes"; isBool: true
+                                    boolVal: Config.sAdapter.trayMenu.spikeOverride
+                                    onCommit: function(value) { Config.sAdapter.trayMenu.spikeOverride = value; }
+                                }
+                                SettingRow {
+                                    visible: Config.sAdapter.trayMenu.spikeOverride
+                                    label: "Enable Spikes"; isBool: true
+                                    boolVal: Config.sAdapter.trayMenu.spikesEnabled
+                                    onCommit: function(value) { Config.sAdapter.trayMenu.spikesEnabled = value; }
+                                }
+                                SettingRow {
+                                    visible: Config.sAdapter.trayMenu.spikeOverride && Config.sAdapter.trayMenu.spikesEnabled
+                                    label: "Frequency (per 100 px)"; isNum: true
+                                    numMin: 0.5; numMax: 10; numStep: 0.5
+                                    value: Config.sAdapter.trayMenu.spikeFrequency
+                                    onCommit: function(value) { Config.sAdapter.trayMenu.spikeFrequency = Number(value); }
+                                }
+                                SettingRow {
+                                    visible: Config.sAdapter.trayMenu.spikeOverride && Config.sAdapter.trayMenu.spikesEnabled
+                                    label: "Spike Length (px)"; isNum: true
+                                    numMin: 0; numMax: 40; numStep: 1
+                                    value: Config.sAdapter.trayMenu.spikeLength
+                                    onCommit: function(value) { Config.sAdapter.trayMenu.spikeLength = Number(value); }
+                                }
+                                SettingRow {
+                                    visible: Config.sAdapter.trayMenu.spikeOverride && Config.sAdapter.trayMenu.spikesEnabled
+                                    label: "Spike Sharpness"; isNum: true
+                                    numMin: 0; numMax: 1; numStep: 0.05
+                                    value: Config.sAdapter.trayMenu.spikeSharpness
+                                    onCommit: function(value) { Config.sAdapter.trayMenu.spikeSharpness = Number(value); }
+                                }
+                                SettingRow {
+                                    visible: Config.sAdapter.trayMenu.spikeOverride && Config.sAdapter.trayMenu.spikesEnabled
+                                    label: "Length Variance"; isNum: true
+                                    numMin: 0; numMax: 1; numStep: 0.05
+                                    value: Config.sAdapter.trayMenu.spikeVariance
+                                    onCommit: function(value) { Config.sAdapter.trayMenu.spikeVariance = Number(value); }
+                                }
+                            }
+
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                visible: contentCol.isTab("Settings") && contentCol.matches("Settings", "Settings Panel Spikes Frequency Length Sharpness Variance Override")
+                                Text { text: "SETTINGS PANEL SPIKES"; color: Theme.textColorAccent; font.bold: true; font.pixelSize: 12 }
+                                SettingRow {
+                                    label: "Override Global Spikes"; isBool: true
+                                    boolVal: Config.sAdapter.settingsPanel.spikeOverride
+                                    onCommit: function(value) { Config.sAdapter.settingsPanel.spikeOverride = value; }
+                                }
+                                SettingRow {
+                                    visible: Config.sAdapter.settingsPanel.spikeOverride
+                                    label: "Enable Spikes"; isBool: true
+                                    boolVal: Config.sAdapter.settingsPanel.spikesEnabled
+                                    onCommit: function(value) { Config.sAdapter.settingsPanel.spikesEnabled = value; }
+                                }
+                                SettingRow {
+                                    visible: Config.sAdapter.settingsPanel.spikeOverride && Config.sAdapter.settingsPanel.spikesEnabled
+                                    label: "Frequency (per 100 px)"; isNum: true
+                                    numMin: 0.5; numMax: 10; numStep: 0.5
+                                    value: Config.sAdapter.settingsPanel.spikeFrequency
+                                    onCommit: function(value) { Config.sAdapter.settingsPanel.spikeFrequency = Number(value); }
+                                }
+                                SettingRow {
+                                    visible: Config.sAdapter.settingsPanel.spikeOverride && Config.sAdapter.settingsPanel.spikesEnabled
+                                    label: "Spike Length (px)"; isNum: true
+                                    numMin: 0; numMax: 40; numStep: 1
+                                    value: Config.sAdapter.settingsPanel.spikeLength
+                                    onCommit: function(value) { Config.sAdapter.settingsPanel.spikeLength = Number(value); }
+                                }
+                                SettingRow {
+                                    visible: Config.sAdapter.settingsPanel.spikeOverride && Config.sAdapter.settingsPanel.spikesEnabled
+                                    label: "Spike Sharpness"; isNum: true
+                                    numMin: 0; numMax: 1; numStep: 0.05
+                                    value: Config.sAdapter.settingsPanel.spikeSharpness
+                                    onCommit: function(value) { Config.sAdapter.settingsPanel.spikeSharpness = Number(value); }
+                                }
+                                SettingRow {
+                                    visible: Config.sAdapter.settingsPanel.spikeOverride && Config.sAdapter.settingsPanel.spikesEnabled
+                                    label: "Length Variance"; isNum: true
+                                    numMin: 0; numMax: 1; numStep: 0.05
+                                    value: Config.sAdapter.settingsPanel.spikeVariance
+                                    onCommit: function(value) { Config.sAdapter.settingsPanel.spikeVariance = Number(value); }
                                 }
                             }
 

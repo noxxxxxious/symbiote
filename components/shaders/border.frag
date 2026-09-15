@@ -27,6 +27,14 @@ layout(std140, binding = 0) uniform buf {
     float organicBorderAmplitudeRange;
 
     // --- Dedicated Launcher geometry ---
+    float launcherSpikeSharpness;
+    float clockSpikeSharpness;
+    float traySpikeSharpness;
+    float trayMenuSpikeSharpness;
+    vec4 launcherSpikes;
+    vec4 clockSpikes;
+    vec4 traySpikes;
+    vec4 trayMenuSpikes;
     vec2 launcherPos;
     vec2 launcherSize;
     float launcherRounding;
@@ -35,6 +43,20 @@ layout(std140, binding = 0) uniform buf {
     vec2 clockPos;
     vec2 clockSize;
     vec4 clockRounding;
+
+    // --- Dedicated Tray geometry ---
+    vec2 trayPos;
+    vec2 traySize;
+    vec4 trayRounding;
+    vec2 trayTendrilBlend;
+    float trayWaistSmoothing;
+
+    // --- Dedicated Tray Menu geometry ---
+    vec2 trayMenuPos;
+    vec2 trayMenuSize;
+    vec4 trayMenuRounding;
+    vec2 trayMenuTendrilBlend;
+    float trayMenuWaistSmoothing;
 
     // --- Outer shadow ---
     float shadowEnabledF;
@@ -208,6 +230,53 @@ float smin(float a, float b, float k) {
     return min(a, b) - h * h * k * 0.25;
 }
 
+// Project onto a closed chain of four lines and four circular arcs. Each
+// candidate carries arc length; adjacent pieces agree at their endpoints.
+float spikedPanel(vec2 p, vec2 b, vec4 radii, vec4 profile, float sharpness) {
+    vec4 r = clamp(radii, vec4(0.0), vec4(min(b.x, b.y)));
+    float d = sdRoundBox4(p, b, r);
+    if (profile.x < 0.5 || profile.z <= 0.0 || d > profile.z + 64.0 || d < -64.0) return d;
+    float best = 1.0e20;
+    float coordinate = 0.0;
+    float offset = 0.0;
+    for (int i = 0; i < 4; ++i) {
+        // Top, right, bottom, left; local frame follows clockwise travel.
+        vec2 tangent = i == 0 ? vec2(1,0) : i == 1 ? vec2(0,1) : i == 2 ? vec2(-1,0) : vec2(0,-1);
+        vec2 normal = vec2(tangent.y, -tangent.x);
+        float halfAlong = (i == 0 || i == 2) ? b.x : b.y;
+        float halfAcross = (i == 0 || i == 2) ? b.y : b.x;
+        float startR = i == 0 ? r.x : i == 1 ? r.y : i == 2 ? r.z : r.w;
+        float endR = i == 0 ? r.y : i == 1 ? r.z : i == 2 ? r.w : r.x;
+        vec2 a = tangent * (-halfAlong + startR) + normal * halfAcross;
+        float segment = max(0.0, 2.0 * halfAlong - startR - endR);
+        float t = clamp(dot(p - a, tangent), 0.0, segment);
+        float dist = length(p - a - tangent * t);
+        if (dist < best) { best = dist; coordinate = offset + t; }
+        offset += segment;
+        vec2 center = tangent * (halfAlong - endR) + normal * (halfAcross - endR);
+        vec2 delta = p - center;
+        float angle = clamp(atan(dot(delta, tangent), dot(delta, normal)), 0.0, 1.57079632679);
+        vec2 arcPoint = center + endR * (normal * cos(angle) + tangent * sin(angle));
+        dist = length(p - arcPoint);
+        if (dist < best) { best = dist; coordinate = offset + endR * angle; }
+        offset += endR * 1.57079632679;
+    }
+    float count = max(1.0, floor(offset * max(profile.y, 0.1) / 100.0 + 0.5));
+    float phase = coordinate / max(offset, 1.0) * count;
+    float index = mod(floor(phase), count);
+    float randomLength = fract(sin(index * 127.1 + 31.7) * 43758.5453);
+    float amplitude = profile.z * mix(1.0, randomLength, clamp(profile.w, 0.0, 1.0));
+    // Rounded V: nearly linear flanks, smooth roots and tips. Zero slope at
+    // cell boundaries keeps unequal neighboring spikes joined smoothly.
+    float wave = 0.5 - 0.5 * cos(6.28318530718 * fract(phase));
+    float roundedV = (sqrt(wave + 0.04) - 0.2) / (sqrt(1.04) - 0.2);
+    // Invert the rounded lobe: concave flanks meet at a pointed tip.
+    // At zero retain the original soft lobes; at one the tip is a cusp.
+    float pointedV = 1.0 - abs(cos(3.14159265359 * fract(phase)));
+    float shape = mix(roundedV, pointedV, clamp(sharpness, 0.0, 1.0));
+    return d - amplitude * shape;
+}
+
 float tendrilRadiusProfile(float t, float rootR, float waistR, float panelR, float hw) {
     float linear1 = mix(rootR, waistR, clamp(t / 0.5, 0.0, 1.0));
     float linear2 = mix(waistR, panelR, clamp((t - 0.5) / 0.5, 0.0, 1.0));
@@ -258,16 +327,45 @@ float addTendril(float scene, vec2 px, vec4 pos, vec4 thick, vec2 blendK, float 
 }
 
 bool isClockTendril(vec2 tip) {
-    vec2 cMin = clockPos - vec2(10.0);
-    vec2 cMax = clockPos + clockSize + vec2(10.0);
-    return tip.x >= cMin.x && tip.x <= cMax.x
-        && tip.y >= cMin.y && tip.y <= cMax.y;
+    vec2 cMin = clockPos - vec2(15.0);
+    vec2 cMax = clockPos + clockSize + vec2(15.0);
+    return (tip.x >= cMin.x && tip.x <= cMax.x && tip.y >= cMin.y && tip.y <= cMax.y);
+}
+
+// This is the same as isClockTendril for now, but I'll leave this separate to make things easier in case we decide to change some stuff later on
+bool isTrayTendril(vec2 tip) {
+    vec2 tMin = trayPos - vec2(15.0);
+    vec2 tMax = trayPos + traySize + vec2(15.0);
+    return (tip.x >= tMin.x && tip.x <= tMax.x && tip.y >= tMin.y && tip.y <= tMax.y);
+}
+
+bool isTrayMenuTendril(vec2 tip) {
+    vec2 mMin = trayMenuPos - vec2(15.0);
+    vec2 mMax = trayMenuPos + trayMenuSize + vec2(15.0);
+    return trayMenuSize.x > 1.0 && trayMenuSize.y > 1.0
+        && tip.x >= mMin.x && tip.x <= mMax.x
+        && tip.y >= mMin.y && tip.y <= mMax.y;
 }
 
 float addTendrilAuto(float scene, vec2 px, vec4 pos, vec4 thick) {
-    bool forClock = isClockTendril(pos.zw);
-    vec2 blendK = forClock ? clockTendrilBlend : launcherTendrilBlend;
-    float waist = forClock ? clockWaistSmoothing : launcherWaistSmoothing;
+    vec2 tip = pos.zw;
+    vec2 blendK;
+    float waist;
+
+    if (isClockTendril(tip)) {
+        blendK = clockTendrilBlend;
+        waist = clockWaistSmoothing;
+    } else if (isTrayMenuTendril(tip)) {
+        blendK = trayMenuTendrilBlend;
+        waist = trayMenuWaistSmoothing;
+    } else if (isTrayTendril(tip)) {
+        blendK = trayTendrilBlend;
+        waist = trayWaistSmoothing;
+    } else {
+        blendK = launcherTendrilBlend;
+        waist = launcherWaistSmoothing;
+    }
+
     return addTendril(scene, px, pos, thick, blendK, waist);
 }
 
@@ -679,16 +777,32 @@ void main() {
     float launcherSDF = 1.0e4;
     if (launcherSize.x > 1.0 && launcherSize.y > 1.0) {
         vec2 launcherCenter = launcherPos + launcherSize * 0.5;
-        launcherSDF = sdRoundBox(px - launcherCenter, launcherSize * 0.5, launcherRounding);
+        launcherSDF = spikedPanel(px - launcherCenter, launcherSize * 0.5, vec4(launcherRounding), launcherSpikes, launcherSpikeSharpness);
     }
 
+    // Clock panel SDF
     float clockSDF = 1.0e4;
     if (clockSize.x > 1.0 && clockSize.y > 1.0) {
         vec2 clockCenter = clockPos + clockSize * 0.5;
-        clockSDF = sdRoundBox4(px - clockCenter, clockSize * 0.5, clockRounding);
+        clockSDF = spikedPanel(px - clockCenter, clockSize * 0.5, clockRounding, clockSpikes, clockSpikeSharpness);
     }
 
-    float panelsSDF = min(launcherSDF, clockSDF);
+    // Tray panel SDF
+    float traySDF = 1.0e4;
+    if (traySize.x > 1.0 && traySize.y > 1.0) {
+        vec2 trayCenter = trayPos + traySize * 0.5;
+        traySDF = spikedPanel(px - trayCenter, traySize * 0.5, trayRounding, traySpikes, traySpikeSharpness);
+    }
+
+    // Tray menu panel SDF
+    float trayMenuSDF = 1.0e4;
+    if (trayMenuSize.x > 1.0 && trayMenuSize.y > 1.0) {
+        vec2 trayMenuCenter = trayMenuPos + trayMenuSize * 0.5;
+        trayMenuSDF = spikedPanel(px - trayMenuCenter, trayMenuSize * 0.5, trayMenuRounding, trayMenuSpikes, trayMenuSpikeSharpness);
+    }
+
+    // Combine all panels into scene
+    float panelsSDF = min(launcherSDF, min(clockSDF, min(traySDF, trayMenuSDF)));
     float scene = min(ringSDF, panelsSDF);
     float featureSDF = min(-organicInnerSDF, panelsSDF);
 

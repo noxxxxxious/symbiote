@@ -7,17 +7,24 @@
         "thickness": 17
     },
     "clock": {
-        "extraLongCount": 1,
-        "extraLongReach": 0.13,
-        "extraLongReachSpread": 0.14,
-        "extraLongTipSpread": 0.55,
-        "extraShortCount": 2,
-        "extraShortReach": 0.14,
-        "extraShortReachSpread": 0.07,
-        "extraShortTipSpread": 0.61,
+        "extraHorizontalCount": 2,
+        "extraHorizontalReach": 0.14,
+        "extraHorizontalReachSpread": 0.07,
+        "extraHorizontalTipSpread": 0.61,
         "extraTendrils": true,
+        "extraVerticalCount": 1,
+        "extraVerticalReach": 0.13,
+        "extraVerticalReachSpread": 0.14,
+        "extraVerticalTipSpread": 0.43,
+        "mode": "parasitic",
         "position": "top-left",
-        "slideDirection": "diagonal"
+        "slideDirection": "diagonal",
+        "spikeFrequency": 10,
+        "spikeLength": 8,
+        "spikeOverride": false,
+        "spikeSharpness": 1,
+        "spikeVariance": 0.5,
+        "spikesEnabled": true
     },
     "innerEdge": {
         "color": "#a6da95",
@@ -27,7 +34,13 @@
     },
     "launcher": {
         "backgroundColor": "transparent",
-        "showIcons": true
+        "showIcons": true,
+        "spikeFrequency": 6.5,
+        "spikeLength": 23,
+        "spikeOverride": false,
+        "spikeSharpness": 0.75,
+        "spikeVariance": 0.45,
+        "spikesEnabled": true
     },
     "organicBorder": {
         "amplitude": 9.5,
@@ -43,7 +56,20 @@
         "valleySharpness": 1
     },
     "panels": {
-        "backgroundColor": "transparent"
+        "backgroundColor": "transparent",
+        "spikeFrequency": 2.5,
+        "spikeLength": 26,
+        "spikeSharpness": 1,
+        "spikeVariance": 0.75,
+        "spikesEnabled": false
+    },
+    "settingsPanel": {
+        "spikeFrequency": 3.5,
+        "spikeLength": 10,
+        "spikeOverride": false,
+        "spikeSharpness": 0.75,
+        "spikeVariance": 0.3,
+        "spikesEnabled": false
     },
     "shadow": {
         "color": "#000000",
@@ -80,6 +106,45 @@
         "accent": "#a6da95",
         "color": "#cad3f5",
         "soft": "#a5adcb"
+    },
+    "tray": {
+        "extraHorizontalCount": 1,
+        "extraHorizontalReach": 0.11,
+        "extraHorizontalReachSpread": 0.12,
+        "extraHorizontalTipSpread": 0.55,
+        "extraTendrils": true,
+        "extraVerticalCount": 2,
+        "extraVerticalReach": 0.16,
+        "extraVerticalReachSpread": 0.14,
+        "extraVerticalTipSpread": 0.34,
+        "menuHorizontalCount": 2,
+        "menuHorizontalReach": 0.3,
+        "menuHorizontalReachSpread": 0.12,
+        "menuHorizontalTipSpread": 0.55,
+        "menuMaxLength": 800,
+        "menuPreviewText": "Spreading Infection, Deeper, Into Host",
+        "menuScreenInset": 14,
+        "menuVerticalCount": 2,
+        "menuVerticalReach": 0.36,
+        "menuVerticalReachSpread": 0.14,
+        "menuVerticalTipSpread": 0.44,
+        "mode": "parasitic",
+        "position": "top-right",
+        "slideDirection": "diagonal",
+        "spikeFrequency": 3,
+        "spikeLength": 10,
+        "spikeOverride": false,
+        "spikeSharpness": 0.75,
+        "spikeVariance": 0.3,
+        "spikesEnabled": false
+    },
+    "trayMenu": {
+        "spikeFrequency": 3,
+        "spikeLength": 10,
+        "spikeOverride": false,
+        "spikeSharpness": 0.75,
+        "spikeVariance": 0.3,
+        "spikesEnabled": false
     },
     "wallpaper": {
         "directory": "/home/nox/Pictures/Wallpapers",

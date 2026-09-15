@@ -16,6 +16,24 @@ ShaderEffect {
         Theme.borderColor.a * Theme.borderOpacity
     )
 
+    // x: enabled, y: spikes per 100 px, z: outward length, w: length variance.
+    function spikeProfile(local) {
+        var c = local.spikeOverride ? local : Config.sAdapter.panels
+        return Qt.vector4d(c.spikesEnabled ? 1 : 0, c.spikeFrequency, c.spikeLength, c.spikeVariance)
+    }
+    property vector4d launcherSpikes: spikeProfile(Config.sAdapter.launcher)
+    property vector4d clockSpikes: spikeProfile(Config.sAdapter.clock)
+    property vector4d traySpikes: spikeProfile(Config.sAdapter.tray)
+    property vector4d trayMenuSpikes: spikeProfile(Config.sAdapter.trayMenu)
+
+    function spikeSharpness(local) {
+        return (local.spikeOverride ? local : Config.sAdapter.panels).spikeSharpness
+    }
+    property real launcherSpikeSharpness: spikeSharpness(Config.sAdapter.launcher)
+    property real clockSpikeSharpness: spikeSharpness(Config.sAdapter.clock)
+    property real traySpikeSharpness: spikeSharpness(Config.sAdapter.tray)
+    property real trayMenuSpikeSharpness: spikeSharpness(Config.sAdapter.trayMenu)
+
     // --- Organic inner border ---
     property real organicBorderEnabledF:
         Config.sAdapter.organicBorder.enabled ? 1.0 : 0.0
@@ -89,6 +107,38 @@ ShaderEffect {
     property real clockWidth: 0
     property real clockHeight: 0
 
+    // --- Dedicated Tray Geometry ---
+    property real trayX: 0
+    property real trayY: 0
+    property real trayWidth: 0
+    property real trayHeight: 0
+    property vector4d trayRounding: Qt.vector4d(16, 16, 16, 16)
+    property vector2d trayPos: Qt.vector2d(trayX, trayY)
+    property vector2d traySize: Qt.vector2d(trayWidth, trayHeight)
+
+    // --- Dedicated Tray Menu Geometry ---
+    property real trayMenuX: 0
+    property real trayMenuY: 0
+    property real trayMenuWidth: 0
+    property real trayMenuHeight: 0
+    property vector4d trayMenuRounding: Qt.vector4d(12, 12, 12, 12)
+    property vector2d trayMenuPos: Qt.vector2d(trayMenuX, trayMenuY)
+    property vector2d trayMenuSize: Qt.vector2d(trayMenuWidth, trayMenuHeight)
+
+    // --- Tray Tendril Settings ---
+    property real trayBlendRadiusRoot: trayPanel.tendrilBlendRadiusRootOverride ?? 16
+    property real trayBlendRadiusPanel: trayPanel.tendrilBlendRadiusPanelOverride ?? 12
+    property vector2d trayTendrilBlend: Qt.vector2d(trayBlendRadiusRoot, trayBlendRadiusPanel)
+    property real trayWaistSmoothing: trayPanel.tendrilWaistSmoothingOverride ?? 24
+
+    // --- Tray Menu Tendril Settings ---
+    property vector2d trayMenuTendrilBlend: Qt.vector2d(10, 8)
+    property real trayMenuWaistSmoothing: 28
+
+    // Pool aggregation
+    property var traySlots: []
+    property var trayMenuSlots: []
+
     // MUST BE property vector4d, NOT property real!
     property vector4d clockRounding: Qt.vector4d(16, 16, 16, 16)
 
@@ -131,7 +181,22 @@ ShaderEffect {
                 list.push(cSrc[j]);
         }
 
-        // 3. Fallback to raw tendrilSlots if passed directly
+                // Gather from tray
+        var tSrc = traySlots
+        if (tSrc) {
+            for (var k = 0; k < tSrc.length; k++) {
+                if (tSrc[k] && tSrc[k].activation > 0.001) list.push(tSrc[k])
+            }
+        }
+
+        // 4. Gather from tray menu
+        var tmSrc = trayMenuSlots || [];
+        for (var m = 0; m < tmSrc.length; m++) {
+            if (tmSrc[m] && tmSrc[m].activation > 0.001)
+                list.push(tmSrc[m]);
+        }
+
+        // 5. Fallback to raw tendrilSlots if passed directly
         if (list.length === 0 && tendrilSlots && tendrilSlots.length > 0) {
             for (var k = 0; k < tendrilSlots.length; k++) {
                 if (tendrilSlots[k] && tendrilSlots[k].activation > 0.001)
@@ -305,6 +370,6 @@ ShaderEffect {
     property vector4d tendril63Thick: slotThick(63)
     // ==== end generated ====
 
-    fragmentShader: Qt.resolvedUrl("shaders/border.frag.qsb")
+    fragmentShader: Qt.resolvedUrl("shaders/border-sharpness.frag.qsb")
     blending: true
 }
