@@ -161,20 +161,40 @@ FileView {
             property int count: 5
             property bool vdesk: false
             property bool showNumbers: true
+            // Distance from the dock edge toward the middle of the screen.
+            property real dockInset: 0
             property real tubeRadius: 5
             property real nodeSpacing: 46
             property real chamberRadius: 17
             property int duration: 480
+            // The active-workspace liquid is a two-lobe spring system: the
+            // secondary mass trails, passes through the leader, then recoils.
+            property real liquidFollowerScale: 0.72
+            property real liquidSlingshot: 1.0
+            property real liquidRecoil: 1.0
+            property bool liquidIdlePulse: true
+            property real liquidPulseStrength: 1.75
+            property real liquidPulseSpeed: 0.55
             property bool showOnChange: true
             property int revealDuration: 1500
             property bool tendrils: true
+            // Workspace tendrils belong to the indicator as a whole, not to
+            // individual chambers. Count is therefore the total rendered pool.
+            property int tendrilCount: 6
             property real tendrilWidth: 3
+            property real tendrilReach: 36
+            property real tendrilRootWidth: 4
+            property real tendrilTipWidth: 2
+            property real tendrilJitter: 14
+            property real tendrilSpread: 0.90
         }
 
         property JsonObject text: JsonObject {
             property color color: "red"
             property color soft: "white"
             property color accent: "blue"
+            // Secondary UI surface: settings sidebar, inputs/readouts, menus, etc.
+            property color secondary: "#24273a"
         }
 
         property JsonObject border: JsonObject {

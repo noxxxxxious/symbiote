@@ -14,9 +14,6 @@ for f in "$SHADER_DIR"/*.frag "$SHADER_DIR"/*.vert; do
     if [[ "${f##*/}" == "border.frag" ]]; then
         out="${SHADER_DIR}/border-fast.frag.qsb"
     fi
-    if [[ "${f##*/}" == "workspace-fluid.frag" ]]; then
-        out="${SHADER_DIR}/workspace-docked.frag.qsb"
-    fi
     echo "Compiling $f -> $out"
     qsb --glsl "100 es,120,150" --hlsl 50 --msl 12 -o "$out" "$f"
 done

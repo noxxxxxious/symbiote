@@ -18,8 +18,8 @@ Item {
     property real finalHeight: 420
     property real cornerRounding: 28
 
-    property real tendrilsPer100px: 0.5
-    property int tendrilMaxActive: 20
+    property real tendrilsPer100px: 1
+    property int tendrilMaxActive: 30
     property vector2d tendrilMaxLengthRangeOverride: Qt.vector2d(500, 900)
     property vector2d tendrilRootThicknessRangeOverride: Qt.vector2d(15, 40)
     property vector2d tendrilWaistThicknessRangeOverride: Qt.vector2d(3, 5)
@@ -38,7 +38,7 @@ Item {
     // the panel grows.
     property real tendrilActivationFraction: 0.25
 
-    property int tendrilMaxCorners: 4
+    property int tendrilMaxCorners: 5
 
     // Sorted, filtered results: most-used apps float to the top even while
     // a search query is active, as long as they still match the query.
@@ -295,9 +295,17 @@ Item {
                         height: 48
                         radius: 8
 
-                        // Highlight if hovered OR if currently selected via keyboard
+                        // Dropdown-style accent wash for pointer/keyboard focus.
                         readonly property bool isSelected: index === resultsList.currentIndex
-                        color: (isSelected || rowMouse.containsMouse) ? "#33ffffff" : "transparent"
+                        color: "transparent"
+
+                        AccentHighlight {
+                            anchors.fill: parent
+                            hovered: rowMouse.containsMouse
+                            selected: delegateRoot.isSelected
+                            selectedOpacity: 0.10
+                            radius: delegateRoot.radius
+                        }
 
                         Row {
                             anchors.fill: parent
@@ -318,14 +326,14 @@ Item {
 
                                 Text {
                                     text: delegateRoot.modelData.name
-                                    color: delegateRoot.isSelected ? Theme.textColorAccent : "white"
+                                    color: delegateRoot.isSelected || rowMouse.containsMouse ? Theme.textColorAccent : Theme.textColor
                                     font.pixelSize: 15
                                     font.bold: delegateRoot.isSelected
                                 }
 
                                 Text {
                                     text: delegateRoot.modelData.genericName || ""
-                                    color: "#aaaaaa"
+                                    color: Theme.textColorSoft
                                     font.pixelSize: 11
                                     visible: text.length > 0
                                 }

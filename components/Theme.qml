@@ -8,6 +8,7 @@ QtObject {
     property color textColor: Config.sAdapter.text.color
     property color textColorSoft: Config.sAdapter.text.soft
     property color textColorAccent: Config.sAdapter.text.accent
+    property color secondaryColor: Config.sAdapter.text.secondary
 
     // --- Border geometry ---
     property real borderThickness: Config.sAdapter.border.thickness

@@ -10,13 +10,16 @@ Item {
     readonly property real cardSize: Math.min(210, menu.width * 0.20, menu.height * 0.25)
     readonly property var centers: [[0.25, 0.30], [0.69, 0.28], [0.30, 0.70], [0.75, 0.68], [0.50, 0.49]]
     property real growth: revealed ? 1 : 0
-    width: cardSize * growth
-    height: cardSize * growth
+    readonly property bool hoverActive: hit.containsMouse && card.actionIndex !== 1
+    property real hoverScale: hoverActive ? 1.055 : 1.0
+    width: cardSize * growth * hoverScale
+    height: cardSize * growth * hoverScale
     x: menu.width * centers[actionIndex][0] - width / 2
     y: menu.height * centers[actionIndex][1] - height / 2
     property real cornerRounding: Math.min(32, width / 2)
     visible: growth > 0.01
     Behavior on growth { NumberAnimation { duration: 380; easing.type: Easing.OutCubic } }
+    Behavior on hoverScale { NumberAnimation { duration: 130; easing.type: Easing.OutCubic } }
     Timer { id: revealTimer; onTriggered: card.revealed = true }
     function reveal(delay) { revealed = false; revealTimer.interval = Math.max(1, delay); revealTimer.restart() }
     function dismiss() { revealTimer.stop(); revealed = false }
@@ -58,15 +61,14 @@ Item {
         return specs
     }
 
-    Rectangle {
-        anchors.fill: parent
-        radius: card.cornerRounding
-        color: hit.containsMouse && card.actionIndex !== 1 ? "#20ffffff" : "transparent"
-    }
+    // Hovering swells the actual border-shader panel instead of drawing a
+    // rectangular highlight over the spikey organism.
     Column {
         anchors.centerIn: parent
         spacing: 14 * card.growth
+        scale: card.hoverActive ? 1.04 : 1.0
         opacity: card.growth * (card.actionIndex === 1 ? 0.45 : 1)
+        Behavior on scale { NumberAnimation { duration: 130; easing.type: Easing.OutCubic } }
         Canvas {
             id: icon
             anchors.horizontalCenter: parent.horizontalCenter
@@ -109,8 +111,9 @@ Item {
         Text {
             anchors.horizontalCenter: parent.horizontalCenter
             text: ["Shutdown", "Lock", "Sleep", "Restart", "Settings"][card.actionIndex]
-            color: Theme.textColor
+            color: card.hoverActive ? Theme.textColorAccent : Theme.textColor
             font.pixelSize: Math.max(1, 22 * card.growth)
+            Behavior on color { ColorAnimation { duration: 100 } }
             font.bold: true
         }
         Text {

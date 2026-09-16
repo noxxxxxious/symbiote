@@ -65,6 +65,27 @@ layout(std140, binding = 0) uniform buf {
     vec2 trayMenuTendrilBlend;
     float trayMenuWaistSmoothing;
 
+    // --- Workspace Indicator geometry ---
+    float workspaceEnabledF;
+    vec2 workspaceOrigin;
+    float workspaceVerticalF;
+    float workspaceNodeCount;
+    float workspaceNodeSpacing;
+    float workspaceChamberRadius;
+    float workspaceTubeRadius;
+    float workspaceLiquidPosition;
+    float workspaceLiquidFollowerPosition;
+    float workspaceLiquidVelocity;
+    float workspaceLiquidFollowerVelocity;
+    float workspaceLiquidDurationMs;
+    float workspaceLiquidFollowerScale;
+    float workspaceLiquidPulsePhase;
+    float workspaceLiquidPulseEnabledF;
+    float workspaceLiquidPulseStrength;
+    float workspaceLiquidMotionStrength;
+    float workspaceLiquidEnabledF;
+    vec4 workspaceLiquidColor;
+
     // --- Outer shadow ---
     float shadowEnabledF;
     vec4 shadowColor;
@@ -299,6 +320,107 @@ float sdRoundBox4(vec2 p, vec2 b, vec4 r) {
 float smin(float a, float b, float k) {
     float h = max(k - abs(a - b), 0.0) / k;
     return min(a, b) - h * h * k * 0.25;
+}
+
+// Workspace indicator body. This is deliberately part of the shared border
+// shader instead of a second ShaderEffect, so chambers/tube/tendrils all
+// participate in the same SDF union as the physical screen border.
+float workspaceBodySDF(vec2 px) {
+    if (workspaceEnabledF < 0.5 || workspaceNodeCount < 0.5)
+        return 1.0e4;
+
+    vec2 local = px - workspaceOrigin;
+    vec2 p = workspaceVerticalF > 0.5 ? local.yx : local;
+    float end = max(0.0, workspaceNodeCount - 1.0) * workspaceNodeSpacing;
+    vec2 nearest = vec2(clamp(p.x, 0.0, end), 0.0);
+    float shape = length(p - nearest) - workspaceTubeRadius;
+
+    for (int i = 0; i < 12; ++i) {
+        if (float(i) >= workspaceNodeCount) break;
+        float chamber = length(p - vec2(float(i) * workspaceNodeSpacing, 0.0))
+                      - workspaceChamberRadius;
+        shape = smin(shape, chamber, 7.0);
+    }
+    return shape;
+}
+
+float workspaceLiquidEllipse(vec2 p, float position, float velocity, float scale,
+                            float pulseAmount, float pulsePhase) {
+    // Fractional position gives the original chamber -> neck -> chamber squeeze.
+    // Velocity then adds a second deformation layer: fast material stretches
+    // longitudinally, narrows across the tube, and biases slightly forward.
+    float lastNode = max(0.0, workspaceNodeCount - 1.0);
+    float squeeze = (position < 0.0 || position > lastNode)
+        ? 0.0
+        : pow(abs(sin(position * 3.14159265359)), 0.8);
+    float speed = clamp(abs(velocity) * max(workspaceLiquidDurationMs, 1.0) / 3000.0, 0.0, 1.6);
+    float direction = velocity < 0.0 ? -1.0 : 1.0;
+
+    float across = mix(workspaceChamberRadius - 3.0,
+                       max(1.0, workspaceTubeRadius - 1.5), squeeze);
+    float along = mix(workspaceChamberRadius - 3.0,
+                      workspaceNodeSpacing * 0.72, squeeze);
+
+    along *= 1.0 + speed * 0.38;
+    across *= 1.0 - min(speed * 0.20, 0.30);
+
+    // Pulse only survives when the material is effectively idle. The two
+    // harmonics make the settled blob breathe rather than scale uniformly.
+    float idle = 1.0 - smoothstep(0.035, 0.16, speed);
+    float breath = pulseAmount * idle * sin(pulsePhase);
+    along += breath;
+    across += breath * 0.62;
+    float lateralWobble = pulseAmount * idle * 0.18
+                        * sin(pulsePhase * 0.61 + 1.7);
+
+    along = max(0.75, along * scale);
+    across = max(0.75, across * scale);
+
+    float forwardBias = direction * speed * workspaceChamberRadius * 0.16;
+    vec2 center = vec2(position * workspaceNodeSpacing + forwardBias, lateralWobble);
+    vec2 q = p - center;
+    return (length(q / vec2(along, across)) - 1.0) * min(along, across);
+}
+
+float workspaceLiquidSDF(vec2 px, float bodySDF) {
+    if (workspaceEnabledF < 0.5 || workspaceNodeCount < 0.5)
+        return 1.0e4;
+
+    vec2 local = px - workspaceOrigin;
+    vec2 p = workspaceVerticalF > 0.5 ? local.yx : local;
+
+    float pulseIdle = 1.0 - smoothstep(0.025, 0.14, workspaceLiquidMotionStrength);
+    float pulse = workspaceLiquidPulseEnabledF > 0.5
+        ? max(workspaceLiquidPulseStrength, 0.0) * pulseIdle
+        : 0.0;
+
+    float leader = workspaceLiquidEllipse(
+        p, workspaceLiquidPosition, workspaceLiquidVelocity, 1.0,
+        pulse, workspaceLiquidPulsePhase
+    );
+    float follower = workspaceLiquidEllipse(
+        p, workspaceLiquidFollowerPosition, workspaceLiquidFollowerVelocity,
+        clamp(workspaceLiquidFollowerScale, 0.25, 1.0), 0.0, 0.0
+    );
+
+    // The ligament between the two centers is what makes the trailing half look
+    // pulled taut instead of becoming a disconnected second dot. As the spring
+    // mass passes through the leader this bridge naturally collapses, then
+    // reappears on the opposite side during recoil.
+    vec2 leaderCenter = vec2(workspaceLiquidPosition * workspaceNodeSpacing, 0.0);
+    vec2 followerCenter = vec2(workspaceLiquidFollowerPosition * workspaceNodeSpacing, 0.0);
+    vec2 bridgeDelta = followerCenter - leaderCenter;
+    float bridgeLen2 = max(dot(bridgeDelta, bridgeDelta), 0.001);
+    float bridgeT = clamp(dot(p - leaderCenter, bridgeDelta) / bridgeLen2, 0.0, 1.0);
+    float bridgeRadius = max(0.8, min(workspaceTubeRadius - 1.0,
+                             (workspaceChamberRadius - 3.0) * workspaceLiquidFollowerScale * 0.38));
+    float bridge = length(p - leaderCenter - bridgeDelta * bridgeT) - bridgeRadius;
+
+    float liquid = smin(leader, follower, 3.5);
+    liquid = smin(liquid, bridge, 2.5);
+
+    // Keep every accent lobe physically inside the shared workspace organism.
+    return max(liquid, bodySDF + 2.0);
 }
 
 // Project onto a closed chain of four lines and four circular arcs. Each
@@ -851,6 +973,10 @@ void main() {
     panelsSDF = min(panelsSDF, min(min(powerPanelSDF(px, powerRect0), powerPanelSDF(px, powerRect1)),
                                  min(powerPanelSDF(px, powerRect2), powerPanelSDF(px, powerRect3))));
     panelsSDF = min(panelsSDF, powerPanelSDF(px, powerRect4));
+
+    float workspaceSDF = workspaceBodySDF(px);
+    panelsSDF = min(panelsSDF, workspaceSDF);
+
     float scene = min(ringSDF, panelsSDF);
     float featureSDF = min(-organicInnerSDF, panelsSDF);
 
@@ -932,6 +1058,17 @@ void main() {
         float t = 1.0 - clamp(insideDist / max(innerEdgeFalloff, 0.001), 0.0, 1.0);
         fillRGB = mix(borderColor.rgb, innerEdgeColor.rgb,
                       t * innerEdgeIntensity * innerEdgeColor.a);
+    }
+
+    // Preserve only the workspace indicator's moving liquid accent. The
+    // organism edge itself uses the same shared border/inner-edge treatment
+    // as every other SDF in the scene; there is no workspace-specific rim.
+    if (workspaceEnabledF > 0.5 && workspaceSDF < 4.0) {
+        float workspaceLiquid = workspaceLiquidSDF(px, workspaceSDF);
+        float liquidFill = (1.0 - smoothstep(-0.7, 0.7, workspaceLiquid))
+                         * workspaceLiquidEnabledF
+                         * workspaceLiquidColor.a;
+        fillRGB = mix(fillRGB, workspaceLiquidColor.rgb, clamp(liquidFill, 0.0, 1.0));
     }
 
     vec3 fillPremul = fillRGB * alpha;

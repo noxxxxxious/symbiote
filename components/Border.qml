@@ -148,6 +148,37 @@ ShaderEffect {
     property var traySlots: []
     property var trayMenuSlots: []
 
+    // --- Workspace Indicator Geometry ---
+    // The workspace organism is rendered by border.frag so its body and
+    // tendrils are unioned with the same physical border as every other panel.
+    property real workspaceEnabledF: 0.0
+    property vector2d workspaceOrigin: Qt.vector2d(-100000, -100000)
+    property real workspaceVerticalF: 0.0
+    property real workspaceNodeCount: 0.0
+    property real workspaceNodeSpacing: 46.0
+    property real workspaceChamberRadius: 17.0
+    property real workspaceTubeRadius: 5.0
+    property real workspaceLiquidPosition: 0.0
+    property real workspaceLiquidFollowerPosition: 0.0
+    property real workspaceLiquidVelocity: 0.0
+    property real workspaceLiquidFollowerVelocity: 0.0
+    property real workspaceLiquidDurationMs: 480.0
+    property real workspaceLiquidFollowerScale: 0.72
+    property real workspaceLiquidPulsePhase: 0.0
+    property real workspaceLiquidPulseEnabledF: 0.0
+    property real workspaceLiquidPulseStrength: 0.0
+    property real workspaceLiquidMotionStrength: 0.0
+    property real workspaceLiquidEnabledF: 0.0
+    property vector4d workspaceLiquidColor: Qt.vector4d(
+        Theme.textColorAccent.r,
+        Theme.textColorAccent.g,
+        Theme.textColorAccent.b,
+        Theme.textColorAccent.a
+    )
+    property var workspaceSlots: []
+    property vector2d workspaceTendrilBlend: Qt.vector2d(8, 8)
+    property real workspaceWaistSmoothing: 18
+
     // MUST BE property vector4d, NOT property real!
     property vector4d clockRounding: Qt.vector4d(16, 16, 16, 16)
 
@@ -191,6 +222,7 @@ ShaderEffect {
         collect(clockSlots || [], Qt.vector4d(clockTendrilBlend.x, clockTendrilBlend.y, clockWaistSmoothing, 0));
         collect(traySlots || [], Qt.vector4d(trayTendrilBlend.x, trayTendrilBlend.y, trayWaistSmoothing, 0));
         collect(trayMenuSlots || [], Qt.vector4d(trayMenuTendrilBlend.x, trayMenuTendrilBlend.y, trayMenuWaistSmoothing, 0));
+        collect(workspaceSlots || [], Qt.vector4d(workspaceTendrilBlend.x, workspaceTendrilBlend.y, workspaceWaistSmoothing, 0));
         if (!list.length && !power.length)
             collect(tendrilSlots || [], Qt.vector4d(launcherTendrilBlend.x, launcherTendrilBlend.y, launcherWaistSmoothing, 0));
         list.sort(function(a, b) { return b.slot.activation - a.slot.activation; });

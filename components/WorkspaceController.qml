@@ -1,5 +1,6 @@
 pragma Singleton
 import QtQuick
+import Quickshell
 import Quickshell.Hyprland
 import Quickshell.Io
 import "."
@@ -61,11 +62,58 @@ QtObject {
         command: ["hyprctl", "-j", "printstate"]
         stdout: StdioCollector { onStreamFinished: if (root.vdeskMode) root.acceptState(text) }
     }
+    // Hyprland 0.55+ uses Lua dispatcher expressions when the compositor is
+    // running a Lua config. Quickshell exposes usingLua specifically so callers
+    // can select the correct IPC syntax at runtime.
+    function luaString(value) {
+        return "\"" + String(value ?? "")
+            .replace(/\\/g, "\\\\")
+            .replace(/\"/g, "\\\"") + "\""
+    }
+
+    function workspaceSelector(entry) {
+        if (!entry || !Number.isInteger(entry.id) || entry.id === 0) return ""
+        return entry.id > 0 ? String(entry.id) : "name:" + String(entry.name ?? "")
+    }
+
+    function dispatchWorkspace(screen, entry) {
+        var selector = workspaceSelector(entry)
+        if (!selector) return
+
+        if (Hyprland.usingLua) {
+            if (screen)
+                Hyprland.dispatch("hl.dsp.focus({ monitor = " + luaString(screen.name) + " })")
+            Hyprland.dispatch("hl.dsp.focus({ workspace = " + luaString(selector) + " })")
+        } else {
+            if (screen) Hyprland.dispatch("focusmonitor " + screen.name)
+            Hyprland.dispatch("workspace " + selector)
+        }
+    }
+
+    function dispatchVdesk(entry) {
+        if (!entry || !Number.isInteger(entry.id) || entry.id <= 0) return
+        var target = String(entry.id)
+
+        if (Hyprland.usingLua) {
+            // virtual-desktops exposes Lua wrappers that execute directly rather
+            // than returning an hl.dsp dispatcher. Hyprland.dispatch() would wrap
+            // this in hl.dispatch(...), so invoke the wrapper through Lua eval.
+            Quickshell.execDetached([
+                "hyprctl", "eval",
+                "hl.plugin.virtual_desktops.vdesk(" + luaString(target) + ")"
+            ])
+        } else {
+            Hyprland.dispatch("vdesk " + target)
+        }
+    }
+
     function select(screen, entry, currentId) {
         if (!entry || entry.id === currentId) return
-        var command = Logic.command(entry.id, entry.name, vdeskMode)
-        if (!command || (vdeskMode && vdeskError)) return
-        if (!vdeskMode && screen) Hyprland.dispatch("focusmonitor " + screen.name)
-        Hyprland.dispatch(command)
+        if (vdeskMode) {
+            if (vdeskError) return
+            dispatchVdesk(entry)
+        } else {
+            dispatchWorkspace(screen, entry)
+        }
     }
 }

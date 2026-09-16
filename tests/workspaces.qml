@@ -45,6 +45,7 @@ ShellRoot {
                 compare(indicator.currentId, 3)
                 compare(indicator.activeIndex, 2)
                 var edges = ["top", "right", "bottom", "left"]
+                Config.sAdapter.workspaces.dockInset = 0
                 for (var i = 0; i < edges.length; ++i) {
                     Config.sAdapter.workspaces.edge = edges[i]
                     indicator.summon()
@@ -53,6 +54,15 @@ ShellRoot {
                     verify(indicator.hitSurface.x + indicator.hitSurface.width <= 1280)
                     verify(indicator.hitSurface.y + indicator.hitSurface.height <= 800)
                     compare(indicator.vertical, i === 1 || i === 3)
+                    var oldX = indicator.hitSurface.x
+                    var oldY = indicator.hitSurface.y
+                    Config.sAdapter.workspaces.dockInset = 40
+                    wait(20)
+                    if (edges[i] === "top") verify(indicator.hitSurface.y > oldY)
+                    if (edges[i] === "bottom") verify(indicator.hitSurface.y < oldY)
+                    if (edges[i] === "left") verify(indicator.hitSurface.x > oldX)
+                    if (edges[i] === "right") verify(indicator.hitSurface.x < oldX)
+                    Config.sAdapter.workspaces.dockInset = 0
                 }
                 Config.sAdapter.workspaces.count = 1
                 compare(indicator.entries.length, 1)

@@ -16,6 +16,7 @@ TendrilManager 1.0 TendrilManager.qml
 Exclusions 1.0 Exclusions.qml
 Settings 1.0 Settings.qml
 FeatheredRect 1.0 FeatheredRect.qml
+AccentHighlight 1.0 AccentHighlight.qml
 Wallpaper 1.0 Wallpaper.qml
 Tray 1.0 Tray.qml
 

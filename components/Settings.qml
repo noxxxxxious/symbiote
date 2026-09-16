@@ -19,8 +19,8 @@ Item {
     property real cornerRounding: 20
 
     // Match Launcher's exact tendril shrink speed
-    property real tendrilsPer100px: 0.6
-    property int tendrilMaxActive: 16
+    property real tendrilsPer100px: 1
+    property int tendrilMaxActive: 32
     property vector2d tendrilMaxLengthRangeOverride: Qt.vector2d(400, 800)
     property vector2d tendrilRootThicknessRangeOverride: Qt.vector2d(10, 24)
     property vector2d tendrilWaistThicknessRangeOverride: Qt.vector2d(2, 4)
@@ -36,11 +36,11 @@ Item {
     property real tendrilShrinkSpeedOverride: 0.12
     property real tendrilActivationFraction: 0.25
 
-    property int tendrilMaxTop: 6
-    property int tendrilMaxRight: 4
-    property int tendrilMaxBottom: 6
-    property int tendrilMaxLeft: 4
-    property int tendrilMaxCorners: 4
+    property int tendrilMaxTop: 8
+    property int tendrilMaxRight: 8
+    property int tendrilMaxBottom: 8
+    property int tendrilMaxLeft: 8
+    property int tendrilMaxCorners: 5
 
 
     anchors.centerIn: parent
@@ -61,6 +61,49 @@ Item {
 
     property string currentTab: "All"
     property string searchQuery: ""
+
+    // Minimal transient scrollbar used by both settings panes. It has no
+    // track: just an accent-colored thumb that appears when the panel opens
+    // or the associated Flickable moves, then fades after a short idle delay.
+    component TransientScrollBar: ScrollBar {
+        id: bar
+        required property bool panelOpen
+
+        orientation: Qt.Vertical
+        policy: ScrollBar.AlwaysOn
+        hoverEnabled: true
+        implicitWidth: 7
+        minimumSize: 0.08
+
+        opacity: panelOpen && size < 0.999
+                 && (revealTimer.running || active || pressed || hovered) ? 1.0 : 0.0
+
+        background: null
+        contentItem: Rectangle {
+            implicitWidth: 4
+            implicitHeight: 32
+            radius: 2
+            color: Theme.textColorAccent
+        }
+
+        Behavior on opacity { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
+
+        function reveal() {
+            if (panelOpen && size < 0.999) revealTimer.restart()
+        }
+
+        onPanelOpenChanged: {
+            if (panelOpen) Qt.callLater(reveal)
+            else revealTimer.stop()
+        }
+        onSizeChanged: if (panelOpen && size < 0.999) Qt.callLater(reveal)
+
+        Timer {
+            id: revealTimer
+            interval: 1300
+            repeat: false
+        }
+    }
 
     function requestTrayMenuPreview() { if (root.isOpen) SettingsController.requestTrayMenuPreview() }
 
@@ -164,7 +207,7 @@ Item {
         anchors.margins: Theme.innerEdgeFalloff + 10
         radius: Math.max(0, root.cornerRounding - Theme.innerEdgeFalloff)
         antialiasing: true
-        color: Theme.launcherBackgroundColor !== "transparent" ? Theme.launcherBackgroundColor : "#1e2030"
+        color: Theme.launcherBackgroundColor !== "transparent" ? Theme.launcherBackgroundColor : Theme.borderColor
         border.color: Theme.borderColor
         border.width: 1
         clip: true
@@ -194,7 +237,7 @@ Item {
                     FeatheredRect {
                         anchors.fill: parent
                         anchors.margins: 4
-                        color: "#181926"
+                        color: Theme.secondaryColor
                         radius: Math.max(0, root.cornerRounding - Theme.innerEdgeFalloff - 8)
                         feather: 3
                     }
@@ -217,39 +260,68 @@ Item {
                             }
                         }
 
-                        Repeater {
-                            model: ["All", "Panels", "Launcher", "Clock", "Tray", "Settings", "Power", "Workspaces", "Text", "Border", "Shadows", "Wallpaper"]
+                        Flickable {
+                            id: sidebarFlick
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
+                            contentWidth: width
+                            contentHeight: sidebarTabs.implicitHeight
+                            clip: true
+                            boundsBehavior: Flickable.StopAtBounds
 
-                            delegate: Rectangle {
-                                id: tabBtn
-                                required property string modelData
-                                Layout.fillWidth: true
-                                Layout.preferredHeight: 36
-                                radius: 8
+                            onContentYChanged: sidebarScrollBar.reveal()
 
-                                readonly property bool isSelected: root.currentTab === modelData
-                                color: isSelected ? "#33ffffff" : (tabMouse.containsMouse ? "#1affffff" : "transparent")
+                            ScrollBar.vertical: TransientScrollBar {
+                                id: sidebarScrollBar
+                                panelOpen: root.isOpen
+                            }
 
-                                Text {
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    anchors.left: parent.left
-                                    anchors.leftMargin: 12
-                                    text: tabBtn.modelData
-                                    color: tabBtn.isSelected ? Theme.textColorAccent : Theme.textColor
-                                    font.pixelSize: 14
-                                    font.bold: tabBtn.isSelected
-                                }
+                            ColumnLayout {
+                                id: sidebarTabs
+                                width: parent.width
+                                spacing: 8
 
-                                MouseArea {
-                                    id: tabMouse
-                                    anchors.fill: parent
-                                    hoverEnabled: true
-                                    onClicked: root.currentTab = tabBtn.modelData
+                                Repeater {
+                                    model: ["All", "Panels", "Launcher", "Clock", "Tray", "Settings", "Power", "Workspaces", "Colors", "Border", "Shadows", "Wallpaper"]
+
+                                    delegate: Rectangle {
+                                        id: tabBtn
+                                        required property string modelData
+                                        Layout.fillWidth: true
+                                        Layout.preferredHeight: 36
+                                        radius: 8
+
+                                        readonly property bool isSelected: root.currentTab === modelData
+                                        color: "transparent"
+
+                                        AccentHighlight {
+                                            anchors.fill: parent
+                                            hovered: tabMouse.containsMouse
+                                            selected: tabBtn.isSelected
+                                            selectedOpacity: 0.10
+                                            radius: tabBtn.radius
+                                        }
+
+                                        Text {
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            anchors.left: parent.left
+                                            anchors.leftMargin: 12
+                                            text: tabBtn.modelData
+                                            color: tabBtn.isSelected ? Theme.textColorAccent : Theme.textColor
+                                            font.pixelSize: 14
+                                            font.bold: tabBtn.isSelected
+                                        }
+
+                                        MouseArea {
+                                            id: tabMouse
+                                            anchors.fill: parent
+                                            hoverEnabled: true
+                                            onClicked: root.currentTab = tabBtn.modelData
+                                        }
+                                    }
                                 }
                             }
                         }
-
-                        Item { Layout.fillHeight: true }
                     }
                 }
 
@@ -270,7 +342,7 @@ Item {
                         color: Theme.textColor
                         font.pixelSize: 15
                         background: Rectangle {
-                            color: "#24273a"
+                            color: Theme.secondaryColor
                             radius: 8
                             border.color: searchBox.activeFocus ? Theme.textColorAccent : "transparent"
                             border.width: 1
@@ -279,11 +351,20 @@ Item {
                     }
 
                     Flickable {
+                        id: settingsFlick
                         Layout.fillWidth: true
                         Layout.fillHeight: true
+                        contentWidth: width
                         contentHeight: contentCol.implicitHeight
                         clip: true
                         boundsBehavior: Flickable.StopAtBounds
+
+                        onContentYChanged: settingsScrollBar.reveal()
+
+                        ScrollBar.vertical: TransientScrollBar {
+                            id: settingsScrollBar
+                            panelOpen: root.isOpen
+                        }
 
                         ColumnLayout {
                             id: contentCol
@@ -441,6 +522,14 @@ Item {
                                 }
 
                                 SettingRow {
+                                    label: "Clock Mode"
+                                    isEnum: true
+                                    enumOptions: ["parasitic", "subdermal"]
+                                    value: Config.sAdapter.clock.mode
+                                    onCommit: function(value) { Config.sAdapter.clock.mode = value; }
+                                }
+
+                                SettingRow {
                                     label: "Corner Position"
                                     isEnum: true
                                     enumOptions: [
@@ -588,18 +677,6 @@ Item {
                                     onCommit: function(value) {
                                         Config.sAdapter.clock.extraHorizontalTipSpread = Number(value);
                                     }
-                                }
-                            }
-
-                            ColumnLayout {
-                                Layout.fillWidth: true
-                                visible: contentCol.isTab("Clock") && contentCol.matches("Clock", "Mode")
-                                SettingRow {
-                                    label: "Clock Mode"
-                                    isEnum: true
-                                    enumOptions: ["parasitic", "subdermal"]
-                                    value: Config.sAdapter.clock.mode
-                                    onCommit: function(value) { Config.sAdapter.clock.mode = value; }
                                 }
                             }
 
@@ -846,8 +923,9 @@ Item {
                                     Layout.preferredWidth: 150
                                     Layout.preferredHeight: 30
                                     radius: 6
-                                    color: previewMouse.containsMouse ? "#33ffffff" : "#24273a"
-                                    border.color: Theme.textColorAccent
+                                    color: Theme.secondaryColor
+                                    border.color: "transparent"
+                                    AccentHighlight { anchors.fill: parent; hovered: previewMouse.containsMouse; radius: parent.radius }
                                     Text { anchors.centerIn: parent; text: "PREVIEW MENU"; color: Theme.textColorAccent; font.pixelSize: 12; font.bold: true }
                                     MouseArea { id: previewMouse; anchors.fill: parent; hoverEnabled: true; onClicked: root.requestTrayMenuPreview() }
                                 }
@@ -858,7 +936,7 @@ Item {
                                     text: Config.sAdapter.tray.menuPreviewText
                                     placeholderText: "Spreading Infection, Deeper Into Host, Assimilation Stable"
                                     color: Theme.textColor
-                                    background: Rectangle { color: "#24273a"; radius: 6; border.color: "#313244" }
+                                    background: Rectangle { color: Theme.secondaryColor; radius: 6; border.color: "#313244" }
                                     onTextEdited: {
                                         Config.sAdapter.tray.menuPreviewText = text
                                         root.requestTrayMenuPreview()
@@ -1169,7 +1247,7 @@ Item {
 
                             ColumnLayout {
                                 Layout.fillWidth: true
-                                visible: contentCol.isTab("Workspaces") && contentCol.matches("Workspaces", "Indicator Enabled Dock Edge Auto Hide Count Virtual Desktops Vdesk Numbers Tube Transition Reveal Change Duration Tendrils Spacing Radius")
+                                visible: contentCol.isTab("Workspaces") && contentCol.matches("Workspaces", "Indicator Enabled Dock Edge Inset Offset Auto Hide Count Virtual Desktops Vdesk Numbers Tube Transition Reveal Change Duration Liquid Blob Slingshot Recoil Pulse Tendrils Spacing Radius")
                                 Text { text: "WORKSPACE INDICATOR"; color: Theme.textColorAccent; font.bold: true; font.pixelSize: 12 }
                                 SettingRow {
                                     label: "Enabled"; isBool: true
@@ -1196,6 +1274,12 @@ Item {
                                     enumOptions: ["top", "right", "bottom", "left"]
                                     value: Config.sAdapter.workspaces.edge
                                     onCommit: function(value) { Config.sAdapter.workspaces.edge = value; }
+                                }
+                                SettingRow {
+                                    label: "Dock Inset"; isNum: true
+                                    numMin: 0; numMax: 320; numStep: 4
+                                    value: Config.sAdapter.workspaces.dockInset
+                                    onCommit: function(value) { Config.sAdapter.workspaces.dockInset = Number(value); }
                                 }
                                 SettingRow {
                                     label: "Visible Workspaces / Desktops"; isNum: true
@@ -1228,6 +1312,43 @@ Item {
                                     onCommit: function(value) { Config.sAdapter.workspaces.duration = Number(value); }
                                 }
                                 SettingRow {
+                                    label: "Secondary Blob Size"; isNum: true
+                                    numMin: 0.35; numMax: 2; numStep: 0.05
+                                    value: Config.sAdapter.workspaces.liquidFollowerScale
+                                    onCommit: function(value) { Config.sAdapter.workspaces.liquidFollowerScale = Number(value); }
+                                }
+                                SettingRow {
+                                    label: "Liquid Slingshot Strength"; isNum: true
+                                    numMin: 0.5; numMax: 1.8; numStep: 0.05
+                                    value: Config.sAdapter.workspaces.liquidSlingshot
+                                    onCommit: function(value) { Config.sAdapter.workspaces.liquidSlingshot = Number(value); }
+                                }
+                                SettingRow {
+                                    label: "Liquid Recoil"; isNum: true
+                                    numMin: 0.5; numMax: 1.8; numStep: 0.05
+                                    value: Config.sAdapter.workspaces.liquidRecoil
+                                    onCommit: function(value) { Config.sAdapter.workspaces.liquidRecoil = Number(value); }
+                                }
+                                SettingRow {
+                                    label: "Idle Liquid Pulse"; isBool: true
+                                    boolVal: Config.sAdapter.workspaces.liquidIdlePulse
+                                    onCommit: function(value) { Config.sAdapter.workspaces.liquidIdlePulse = value; }
+                                }
+                                SettingRow {
+                                    visible: Config.sAdapter.workspaces.liquidIdlePulse
+                                    label: "Idle Pulse Strength"; isNum: true
+                                    numMin: 0; numMax: 5; numStep: 0.25
+                                    value: Config.sAdapter.workspaces.liquidPulseStrength
+                                    onCommit: function(value) { Config.sAdapter.workspaces.liquidPulseStrength = Number(value); }
+                                }
+                                SettingRow {
+                                    visible: Config.sAdapter.workspaces.liquidIdlePulse
+                                    label: "Idle Pulse Speed"; isNum: true
+                                    numMin: 0.1; numMax: 2.0; numStep: 0.05
+                                    value: Config.sAdapter.workspaces.liquidPulseSpeed
+                                    onCommit: function(value) { Config.sAdapter.workspaces.liquidPulseSpeed = Number(value); }
+                                }
+                                SettingRow {
                                     label: "Show on Workspace Change"; isBool: true
                                     boolVal: Config.sAdapter.workspaces.showOnChange
                                     onCommit: function(value) { Config.sAdapter.workspaces.showOnChange = value; }
@@ -1236,6 +1357,42 @@ Item {
                                     label: "Indicator Tendrils"; isBool: true
                                     boolVal: Config.sAdapter.workspaces.tendrils
                                     onCommit: function(value) { Config.sAdapter.workspaces.tendrils = value; }
+                                }
+                                SettingRow {
+                                    label: "Tendril Count"; isNum: true
+                                    numMin: 1; numMax: 16; numStep: 1
+                                    value: Config.sAdapter.workspaces.tendrilCount
+                                    onCommit: function(value) { Config.sAdapter.workspaces.tendrilCount = Number(value); }
+                                }
+                                SettingRow {
+                                    label: "Tendril Reach"; isNum: true
+                                    numMin: 0; numMax: 80; numStep: 2
+                                    value: Config.sAdapter.workspaces.tendrilReach
+                                    onCommit: function(value) { Config.sAdapter.workspaces.tendrilReach = Number(value); }
+                                }
+                                SettingRow {
+                                    label: "Tendril Root Width"; isNum: true
+                                    numMin: 1; numMax: 12; numStep: 0.5
+                                    value: Config.sAdapter.workspaces.tendrilRootWidth
+                                    onCommit: function(value) { Config.sAdapter.workspaces.tendrilRootWidth = Number(value); }
+                                }
+                                SettingRow {
+                                    label: "Tendril Tip Width"; isNum: true
+                                    numMin: 0.5; numMax: 10; numStep: 0.5
+                                    value: Config.sAdapter.workspaces.tendrilTipWidth
+                                    onCommit: function(value) { Config.sAdapter.workspaces.tendrilTipWidth = Number(value); }
+                                }
+                                SettingRow {
+                                    label: "Tendril Jitter"; isNum: true
+                                    numMin: 0; numMax: 36; numStep: 1
+                                    value: Config.sAdapter.workspaces.tendrilJitter
+                                    onCommit: function(value) { Config.sAdapter.workspaces.tendrilJitter = Number(value); }
+                                }
+                                SettingRow {
+                                    label: "Tendril Spread"; isNum: true
+                                    numMin: 0.1; numMax: 1.0; numStep: 0.05
+                                    value: Config.sAdapter.workspaces.tendrilSpread
+                                    onCommit: function(value) { Config.sAdapter.workspaces.tendrilSpread = Number(value); }
                                 }
                                 SettingRow {
                                     label: "Fully Visible Time (ms)"; isNum: true
@@ -1257,11 +1414,17 @@ Item {
                                 }
                             }
 
-                            // --- Text ---
+                            // --- Colors ---
                             ColumnLayout {
-                                visible: contentCol.isTab("Text") && (contentCol.matches("Text", "Color") || contentCol.matches("Text", "Soft") || contentCol.matches("Text", "Accent"))
+                                visible: contentCol.isTab("Colors")
+                                      && (contentCol.matches("Colors", "Color")
+                                          || contentCol.matches("Colors", "Text")
+                                          || contentCol.matches("Colors", "Soft")
+                                          || contentCol.matches("Colors", "Accent")
+                                          || contentCol.matches("Colors", "Secondary")
+                                          || contentCol.matches("Colors", "Surface"))
                                 Layout.fillWidth: true
-                                Text { text: "TEXT"; color: Theme.textColorAccent; font.bold: true; font.pixelSize: 12 }
+                                Text { text: "COLORS"; color: Theme.textColorAccent; font.bold: true; font.pixelSize: 12 }
                                 SettingRow {
                                     label: "Text Color"
                                     value: Config.sAdapter.text.color
@@ -1276,6 +1439,11 @@ Item {
                                     label: "Accent Color"
                                     value: Config.sAdapter.text.accent
                                     onCommit: function(val) { Config.sAdapter.text.accent = val; }
+                                }
+                                SettingRow {
+                                    label: "Secondary Color"
+                                    value: Config.sAdapter.text.secondary
+                                    onCommit: function(val) { Config.sAdapter.text.secondary = val; }
                                 }
                             }
 
@@ -1514,7 +1682,7 @@ Item {
                                         color: Theme.textColor
                                         font.pixelSize: 13
                                         background: Rectangle {
-                                            color: "#24273a"
+                                            color: Theme.secondaryColor
                                             radius: 6
                                             border.color: "#313244"
                                             border.width: 1
@@ -1529,9 +1697,11 @@ Item {
                                         Layout.preferredWidth: 74
                                         Layout.preferredHeight: 32
                                         radius: 6
-                                        color: browseMouse.containsMouse ? "#33ffffff" : "#24273a"
-                                        border.color: "#313244"
+                                        color: Theme.secondaryColor
+                                        border.color: "transparent"
                                         border.width: 1
+
+                                        AccentHighlight { anchors.fill: parent; hovered: browseMouse.containsMouse; radius: parent.radius }
 
                                         Text {
                                             anchors.centerIn: parent
@@ -1576,9 +1746,17 @@ Item {
                                             readonly property string filename: modelData.split("/").pop()
                                             readonly property bool isCurrent: Config.sAdapter.wallpaper.path === modelData
 
-                                            color: isCurrent ? "#22" + Theme.textColorAccent.toString().slice(1) : (thumbMouse.containsMouse ? "#2e3248" : "#24273a")
-                                            border.color: isCurrent ? Theme.textColorAccent : (thumbMouse.containsMouse ? "#494d64" : "#313244")
+                                            color: Theme.secondaryColor
+                                            border.color: isCurrent ? Theme.textColorAccent : "transparent"
                                             border.width: isCurrent ? 2 : 1
+
+                                            AccentHighlight {
+                                                anchors.fill: parent
+                                                anchors.margins: isCurrent ? 2 : 0
+                                                hovered: thumbMouse.containsMouse
+                                                selected: thumbCard.isCurrent
+                                                radius: Math.max(0, thumbCard.radius - (thumbCard.isCurrent ? 2 : 0))
+                                            }
 
                                             Column {
                                                 anchors.fill: parent
@@ -1636,7 +1814,7 @@ Item {
     }
 
     // -------------------------------------------------------------------------
-    // Setting Row Helper (Includes ComboBox with Hover Highlight)
+    // Setting Row Helper
     // -------------------------------------------------------------------------
     component SettingRow: RowLayout {
         id: row
@@ -1652,6 +1830,22 @@ Item {
         property real numStep: 1
 
         signal commit(var val)
+
+        function accent(alpha) {
+            return Qt.rgba(Theme.textColorAccent.r, Theme.textColorAccent.g, Theme.textColorAccent.b, alpha)
+        }
+
+        function formatNumber(number) {
+            var value = Number(number)
+            var stepText = String(Math.abs(row.numStep))
+            var dot = stepText.indexOf(".")
+            var places = dot >= 0 ? Math.min(3, stepText.length - dot - 1) : 0
+            if (places === 0 && Math.abs(value - Math.round(value)) > 0.0001)
+                places = Math.abs(value) < 10 ? 2 : 1
+            var text = value.toFixed(places)
+            if (places > 0) text = text.replace(/0+$/, "").replace(/\.$/, "")
+            return text
+        }
 
         Layout.fillWidth: true
         Layout.preferredHeight: 38
@@ -1669,63 +1863,93 @@ Item {
             Layout.preferredWidth: 160
             model: row.enumOptions
             currentIndex: Math.max(0, row.enumOptions.indexOf(String(row.value)))
+            hoverEnabled: true
 
             contentItem: Text {
                 leftPadding: 10
+                rightPadding: 30
                 text: combo.displayText
                 font.pixelSize: 13
                 color: Theme.textColorAccent
                 verticalAlignment: Text.AlignVCenter
+                elide: Text.ElideRight
+            }
+
+            indicator: Text {
+                x: combo.width - width - 10
+                y: (combo.height - height) / 2 - 1
+                text: "▾"
+                color: combo.hovered || combo.popup.visible ? Theme.textColorAccent : Theme.textColorSoft
+                font.pixelSize: 15
+                rotation: combo.popup.visible ? 180 : 0
+                transformOrigin: Item.Center
+                Behavior on rotation { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
+                Behavior on color { ColorAnimation { duration: 100 } }
             }
 
             background: Rectangle {
-                color: combo.hovered ? "#2e3248" : "#24273a"
-                radius: 6
-                border.color: combo.hovered ? Theme.textColorAccent : "#313244"
+                color: combo.popup.visible ? row.accent(0.12) : (combo.hovered ? row.accent(0.10) : Theme.secondaryColor)
+                radius: 7
+                border.color: combo.popup.visible || combo.hovered ? row.accent(0.85) : "#313244"
                 border.width: 1
+                Behavior on color { ColorAnimation { duration: 100 } }
             }
 
             delegate: ItemDelegate {
                 id: itemDel
                 required property string modelData
                 required property int index
+                readonly property bool currentOption: index === combo.currentIndex
 
-                width: combo.width
-                height: 32
+                width: combo.width - 8
+                height: 34
                 hoverEnabled: true
+                highlighted: combo.highlightedIndex === index
+
+                HoverHandler {
+                    id: optionHover
+                    blocking: false
+                }
 
                 contentItem: Text {
                     text: itemDel.modelData
-                    color: (itemDel.hovered || itemDel.highlighted) ? Theme.textColorAccent : Theme.textColor
+                    color: optionHover.hovered || itemDel.highlighted || itemDel.currentOption
+                           ? Theme.textColorAccent : Theme.textColor
                     font.pixelSize: 13
                     verticalAlignment: Text.AlignVCenter
-                    leftPadding: 10
-                    font.bold: itemDel.hovered || itemDel.highlighted
+                    leftPadding: 12
+                    rightPadding: 8
+                    font.bold: optionHover.hovered || itemDel.highlighted
                 }
 
-                background: Rectangle {
-                    color: itemDel.hovered ? "#33ffffff" : (itemDel.highlighted ? "#1affffff" : "transparent")
-                    radius: 4
+                background: AccentHighlight {
+                    hovered: optionHover.hovered
+                    selected: itemDel.highlighted || itemDel.currentOption
+                    selectedOpacity: itemDel.highlighted ? 0.12 : 0.07
+                    edgeOpacity: optionHover.hovered || itemDel.highlighted ? 1.0 : 0.45
+                    radius: 5
                 }
             }
 
             popup: Popup {
                 y: combo.height + 4
                 width: combo.width
-                implicitHeight: Math.min(200, contentItem.implicitHeight + 8)
+                implicitHeight: Math.min(220, contentItem.implicitHeight + 8)
                 padding: 4
 
                 contentItem: ListView {
                     clip: true
                     implicitHeight: contentHeight
+                    spacing: 2
+                    boundsBehavior: Flickable.StopAtBounds
                     model: combo.popup.visible ? combo.delegateModel : null
                     currentIndex: combo.highlightedIndex
                 }
 
                 background: Rectangle {
-                    color: "#1e2030"
-                    radius: 6
-                    border.color: Theme.borderColor
+                    color: Theme.secondaryColor
+                    radius: 7
+                    border.color: row.accent(0.45)
                     border.width: 1
                 }
             }
@@ -1736,11 +1960,15 @@ Item {
         }
 
         Rectangle {
+            id: boolSwitch
             visible: row.isBool
             Layout.preferredWidth: 44
             Layout.preferredHeight: 24
             radius: 12
-            color: row.boolVal ? Theme.textColorAccent : "#313244"
+            color: row.boolVal ? Theme.textColorAccent : Theme.secondaryColor
+            border.color: boolMouse.containsMouse ? row.accent(0.70) : "#313244"
+            border.width: 1
+            Behavior on color { ColorAnimation { duration: 100 } }
 
             Rectangle {
                 width: 20
@@ -1753,19 +1981,140 @@ Item {
             }
 
             MouseArea {
+                id: boolMouse
                 anchors.fill: parent
+                hoverEnabled: true
+                cursorShape: Qt.PointingHandCursor
                 onClicked: row.commit(!row.boolVal)
             }
         }
 
-        Slider {
+        Item {
             visible: row.isNum
-            Layout.preferredWidth: 160
-            from: row.numMin
-            to: row.numMax
-            stepSize: row.numStep
-            value: Number(row.value) || 0
-            onMoved: row.commit(value)
+            Layout.preferredWidth: 196
+            Layout.preferredHeight: 30
+
+            Slider {
+                id: numberSlider
+                anchors.left: parent.left
+                anchors.verticalCenter: parent.verticalCenter
+                width: 132
+                height: 30
+                from: row.numMin
+                to: row.numMax
+                stepSize: row.numStep
+                snapMode: Slider.SnapAlways
+                value: Number(row.value) || 0
+                hoverEnabled: true
+                onMoved: row.commit(value)
+
+                background: Rectangle {
+                    x: numberSlider.leftPadding
+                    y: numberSlider.topPadding + numberSlider.availableHeight / 2 - height / 2
+                    width: numberSlider.availableWidth
+                    height: 7
+                    radius: 3.5
+                    color: "#181926"
+                    border.color: numberSlider.hovered || numberSlider.pressed ? row.accent(0.6) : "#313244"
+                    border.width: 1
+
+                    Rectangle {
+                        x: 1
+                        y: 1
+                        width: Math.max(0, (parent.width - 2) * numberSlider.visualPosition)
+                        height: parent.height - 2
+                        radius: 2.5
+                        color: Theme.textColorAccent
+                        opacity: numberSlider.pressed ? 1.0 : 0.82
+                        Behavior on width { NumberAnimation { duration: 55 } }
+                    }
+                }
+
+                handle: Rectangle {
+                    id: numberHandle
+                    x: numberSlider.leftPadding + numberSlider.visualPosition * (numberSlider.availableWidth - width)
+                    y: numberSlider.topPadding + numberSlider.availableHeight / 2 - height / 2
+                    implicitWidth: handleHover.hovered || numberSlider.pressed ? 19 : 16
+                    implicitHeight: implicitWidth
+                    radius: width / 2
+                    color: Theme.borderColor
+                    border.color: Theme.textColorAccent
+                    border.width: 2
+
+                    HoverHandler { id: handleHover; blocking: false }
+
+                    Rectangle {
+                        anchors.centerIn: parent
+                        width: 6
+                        height: 6
+                        radius: 3
+                        color: Theme.textColorAccent
+                    }
+
+                    Behavior on implicitWidth { NumberAnimation { duration: 90; easing.type: Easing.OutCubic } }
+                }
+            }
+
+            TextField {
+                id: numberInput
+                anchors.right: parent.right
+                anchors.verticalCenter: parent.verticalCenter
+                width: 56
+                height: 26
+                padding: 0
+                leftPadding: 4
+                rightPadding: 4
+                horizontalAlignment: Text.AlignHCenter
+                verticalAlignment: Text.AlignVCenter
+                selectByMouse: true
+                inputMethodHints: Qt.ImhFormattedNumbersOnly
+                color: activeFocus ? Theme.textColorAccent : Theme.textColor
+                selectionColor: row.accent(0.35)
+                selectedTextColor: Theme.textColor
+                font.pixelSize: 11
+                font.bold: activeFocus
+                text: row.formatNumber(numberSlider.value)
+
+                function commitTypedValue() {
+                    var parsed = Number(text.trim())
+                    if (!isFinite(parsed)) {
+                        text = row.formatNumber(numberSlider.value)
+                        return
+                    }
+
+                    var clamped = Math.max(row.numMin, Math.min(row.numMax, parsed))
+                    if (row.numStep > 0) {
+                        var steps = Math.round((clamped - row.numMin) / row.numStep)
+                        clamped = row.numMin + steps * row.numStep
+                        clamped = Math.max(row.numMin, Math.min(row.numMax, clamped))
+                    }
+
+                    row.commit(clamped)
+                    text = row.formatNumber(clamped)
+                }
+
+                onEditingFinished: commitTypedValue()
+                Keys.onReturnPressed: { commitTypedValue(); focus = false }
+                Keys.onEnterPressed: { commitTypedValue(); focus = false }
+
+                Connections {
+                    target: numberSlider
+                    function onValueChanged() {
+                        if (!numberInput.activeFocus)
+                            numberInput.text = row.formatNumber(numberSlider.value)
+                    }
+                }
+
+                background: Rectangle {
+                    color: Theme.secondaryColor
+                    radius: 6
+                    border.color: numberInput.activeFocus
+                                  ? row.accent(0.85)
+                                  : (numberSlider.hovered || numberSlider.pressed ? row.accent(0.45) : "#313244")
+                    border.width: 1
+                    Behavior on border.color { ColorAnimation { duration: 90 } }
+                }
+            }
         }
 
         TextField {
@@ -1775,7 +2124,7 @@ Item {
             color: Theme.textColor
             font.pixelSize: 13
             background: Rectangle {
-                color: "#24273a"
+                color: Theme.secondaryColor
                 radius: 6
                 border.color: "#313244"
                 border.width: 1

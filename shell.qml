@@ -308,6 +308,28 @@ ShellRoot {
                         trayPanel.menuTendrilPanel.tendrilBlendRadiusPanelOverride
                     )
                     trayMenuWaistSmoothing: trayPanel.menuTendrilPanel.tendrilWaistSmoothingOverride
+
+                    // Workspace indicator is part of the same SDF scene as the
+                    // border/panels. Its tendrils use the shared tendril pool.
+                    workspaceEnabledF: workspaceIndicator.shaderEnabledF
+                    workspaceOrigin: workspaceIndicator.firstNodeCenter
+                    workspaceVerticalF: workspaceIndicator.vertical ? 1.0 : 0.0
+                    workspaceNodeCount: workspaceIndicator.entries.length
+                    workspaceNodeSpacing: workspaceIndicator.config.nodeSpacing
+                    workspaceChamberRadius: workspaceIndicator.config.chamberRadius
+                    workspaceTubeRadius: workspaceIndicator.config.tubeRadius
+                    workspaceLiquidPosition: workspaceIndicator.liquidPosition
+                    workspaceLiquidFollowerPosition: workspaceIndicator.liquidFollowerPosition
+                    workspaceLiquidVelocity: workspaceIndicator.liquidVelocity
+                    workspaceLiquidFollowerVelocity: workspaceIndicator.liquidFollowerVelocity
+                    workspaceLiquidDurationMs: workspaceIndicator.config.duration
+                    workspaceLiquidFollowerScale: workspaceIndicator.liquidFollowerScale
+                    workspaceLiquidPulsePhase: workspaceIndicator.liquidPulsePhase
+                    workspaceLiquidPulseEnabledF: workspaceIndicator.liquidIdlePulse ? 1.0 : 0.0
+                    workspaceLiquidPulseStrength: workspaceIndicator.liquidPulseStrength
+                    workspaceLiquidMotionStrength: workspaceIndicator.liquidMotionStrength
+                    workspaceLiquidEnabledF: workspaceIndicator.liquidEnabledF
+                    workspaceSlots: workspaceIndicator.tendrilSlots
                 }
 
                 // -------------------------------------------------------------

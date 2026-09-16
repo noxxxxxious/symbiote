@@ -702,8 +702,15 @@ Item {
                 required property int index
                 width: ListView.view ? ListView.view.width : 0
                 height: modelData.isSeparator ? 8 : 28
-                color: rowHover.hovered && !modelData.isSeparator ? "#22ffffff" : "transparent"
+                color: "transparent"
                 radius: 6
+
+                AccentHighlight {
+                    anchors.fill: parent
+                    visible: !menuRow.modelData.isSeparator
+                    hovered: rowHover.hovered
+                    radius: menuRow.radius
+                }
 
                 Rectangle {
                     visible: menuRow.modelData.isSeparator

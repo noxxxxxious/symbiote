@@ -32,4 +32,3 @@ QtObject {
         return icon
     }
 }
-
