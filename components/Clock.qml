@@ -39,6 +39,7 @@ Item {
     readonly property vector4d cornerRadii: Qt.vector4d(radiusTL, radiusTR, radiusBR, radiusBL)
 
     // Dominant scalar rounding for TendrilManager perimeter calculations
+    property bool tendrilStaticGeometry: true
     readonly property real panelCornerRounding: cornerRounding
 
     // Hover / Retraction state (driven from shell.qml)

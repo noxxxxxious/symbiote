@@ -25,6 +25,7 @@ ShaderEffect {
     property vector4d clockSpikes: spikeProfile(Config.sAdapter.clock)
     property vector4d traySpikes: spikeProfile(Config.sAdapter.tray)
     property vector4d trayMenuSpikes: spikeProfile(Config.sAdapter.trayMenu)
+    property vector4d notificationSpikes: spikeProfile(Config.sAdapter.notifications)
 
     function spikeSharpness(local) {
         return (local.spikeOverride ? local : Config.sAdapter.panels).spikeSharpness
@@ -33,6 +34,7 @@ ShaderEffect {
     property real clockSpikeSharpness: spikeSharpness(Config.sAdapter.clock)
     property real traySpikeSharpness: spikeSharpness(Config.sAdapter.tray)
     property real trayMenuSpikeSharpness: spikeSharpness(Config.sAdapter.trayMenu)
+    property real notificationSpikeSharpness: spikeSharpness(Config.sAdapter.notifications)
 
     property vector4d powerRect0: Qt.vector4d(0, 0, 0, 0)
     property vector4d powerRect1: Qt.vector4d(0, 0, 0, 0)
@@ -134,6 +136,24 @@ ShaderEffect {
     property vector2d trayMenuPos: Qt.vector2d(trayMenuX, trayMenuY)
     property vector2d trayMenuSize: Qt.vector2d(trayMenuWidth, trayMenuHeight)
 
+    // --- Notification Geometry ---
+    property real notificationCenterX: 0
+    property real notificationCenterY: 0
+    property real notificationCenterWidth: 0
+    property real notificationCenterHeight: 0
+    property vector4d notificationCenterRounding: Qt.vector4d(24, 24, 24, 24)
+    property vector2d notificationCenterPos: Qt.vector2d(notificationCenterX, notificationCenterY)
+    property vector2d notificationCenterSize: Qt.vector2d(notificationCenterWidth, notificationCenterHeight)
+    property real notificationCenterJoinRadius: 20
+
+    property real notificationToastX: 0
+    property real notificationToastY: 0
+    property real notificationToastWidth: 0
+    property real notificationToastHeight: 0
+    property vector4d notificationToastRounding: Qt.vector4d(18, 18, 18, 18)
+    property vector2d notificationToastPos: Qt.vector2d(notificationToastX, notificationToastY)
+    property vector2d notificationToastSize: Qt.vector2d(notificationToastWidth, notificationToastHeight)
+
     // --- Tray Tendril Settings ---
     property real trayBlendRadiusRoot: trayPanel.tendrilBlendRadiusRootOverride ?? 16
     property real trayBlendRadiusPanel: trayPanel.tendrilBlendRadiusPanelOverride ?? 12
@@ -147,6 +167,8 @@ ShaderEffect {
     // Pool aggregation
     property var traySlots: []
     property var trayMenuSlots: []
+    property var notificationCenterSlots: []
+    property var notificationToastSlots: []
 
     // --- Workspace Indicator Geometry ---
     // The workspace organism is rendered by border.frag so its body and
@@ -222,6 +244,8 @@ ShaderEffect {
         collect(clockSlots || [], Qt.vector4d(clockTendrilBlend.x, clockTendrilBlend.y, clockWaistSmoothing, 0));
         collect(traySlots || [], Qt.vector4d(trayTendrilBlend.x, trayTendrilBlend.y, trayWaistSmoothing, 0));
         collect(trayMenuSlots || [], Qt.vector4d(trayMenuTendrilBlend.x, trayMenuTendrilBlend.y, trayMenuWaistSmoothing, 0));
+        collect(notificationCenterSlots || [], Qt.vector4d(24, 18, 42, 0));
+        collect(notificationToastSlots || [], Qt.vector4d(14, 10, 26, 0));
         collect(workspaceSlots || [], Qt.vector4d(workspaceTendrilBlend.x, workspaceTendrilBlend.y, workspaceWaistSmoothing, 0));
         if (!list.length && !power.length)
             collect(tendrilSlots || [], Qt.vector4d(launcherTendrilBlend.x, launcherTendrilBlend.y, launcherWaistSmoothing, 0));

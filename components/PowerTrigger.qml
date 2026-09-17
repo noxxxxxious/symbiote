@@ -6,6 +6,7 @@ MouseArea {
     property real availableWidth: 300
     property bool available: true
     property string debugName: ""
+    property int debugWorkspaceId: 0
     // Keep this MouseArea enabled for the entire lifetime of the shell. Removing
     // it from the input mask while the menu is open can leave the compositor's
     // region stale until the pointer leaves and re-enters the screen. The
@@ -22,33 +23,68 @@ MouseArea {
     // delivering motion events throughout the drag. It contracts on release.
     height: dragging ? Math.max(96, restingHeight) : restingHeight
     preventStealing: true
-    onAvailableChanged: console.log("[PowerTrigger]", debugName || "<unnamed>", "available:", available, "pressed:", pressed, "enabled:", enabled)
-    onDraggingChanged: console.log("[PowerTrigger]", debugName || "<unnamed>", "drag capture:", dragging, "height:", height)
+    // Trigger grows upward after press. MouseArea-local y therefore shifts by
+    // ~its growth amount; use parent coordinates so pull measures real cursor
+    // movement, independent of the resized hit area.
+    function stablePointerY(mouse) {
+        return mapToItem(parent, mouse.x, mouse.y).y
+    }
+    function trace(stage, mouse) {
+        var localY = mouse ? mouse.y : "-"
+        var stableY = mouse ? stablePointerY(mouse) : "-"
+        console.log("[PowerTrigger]", stage,
+                    "monitor=", debugName || "<unnamed>",
+                    "workspace=", debugWorkspaceId,
+                    "available=", available,
+                    "enabled=", enabled,
+                    "visible=", visible,
+                    "contains=", containsMouse,
+                    "pressed=", pressed,
+                    "dragging=", dragging,
+                    "fired=", fired,
+                    "geom=", x, y, width, height,
+                    "localY=", localY,
+                    "stableY=", stableY,
+                    "startY=", startY,
+                    "pull=", pull)
+    }
+    Component.onCompleted: trace("ready")
+    onAvailableChanged: trace("available-changed")
+    onDebugWorkspaceIdChanged: trace("workspace-changed")
+    onDraggingChanged: trace("dragging-changed")
+    onHeightChanged: trace("height-changed")
+    onContainsMouseChanged: trace("contains-mouse-changed")
+    onPressedChanged: trace("pressed-changed")
     onPressed: function(mouse) {
-        console.log("[PowerTrigger]", debugName || "<unnamed>", "pressed y:", mouse.y, "available:", available, "height:", height, "menu grab:", mouse.source)
+        trace("press", mouse)
         if (!available) {
-            console.log("[PowerTrigger]", debugName || "<unnamed>", "press rejected (unavailable)")
+            trace("press-rejected-unavailable", mouse)
             mouse.accepted = false
             return
         }
+        startY = stablePointerY(mouse); pull = 0; fired = false
         dragging = true
-        startY = mouse.y; pull = 0; fired = false
+        trace("drag-start", mouse)
     }
     onPositionChanged: function(mouse) {
-        if (!pressed || fired) return
-        pull = Math.max(0, startY - mouse.y)
+        if (!pressed || fired) {
+            trace("motion-ignored", mouse)
+            return
+        }
+        pull = Math.max(0, startY - stablePointerY(mouse))
+        trace("drag-motion", mouse)
         if (pull >= 80) {
             fired = true
-            console.log("[PowerTrigger]", debugName || "<unnamed>", "threshold reached; pull:", pull)
+            trace("threshold-reached", mouse)
             triggered()
         }
     }
-    onReleased: {
-        console.log("[PowerTrigger]", debugName || "<unnamed>", "released; pull:", pull, "fired:", fired)
+    onReleased: function(mouse) {
+        trace("release", mouse)
         dragging = false; pull = 0; fired = false
     }
-    onCanceled: {
-        console.log("[PowerTrigger]", debugName || "<unnamed>", "canceled; pull:", pull, "fired:", fired)
+    onCanceled: function(mouse) {
+        trace("cancel", mouse)
         dragging = false; pull = 0; fired = false
     }
     Rectangle {

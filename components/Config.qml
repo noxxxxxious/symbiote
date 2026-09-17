@@ -141,6 +141,40 @@ FileView {
             property real spikeSharpness: 0.75
         }
 
+        property JsonObject notifications: JsonObject {
+            property string toastName: "Synaptic Pulse"
+            property string centerName: "Neuron Engagement"
+            property string position: "bottom-right"
+            property bool centerExtraTendrils: true
+            property int centerExtraTendrilCount: 3
+            property real centerExtraTendrilReach: 0.28
+            property real centerExtraTendrilRootSpread: 0.58
+            property real centerExtraTendrilTipSpread: 0.46
+            property string toastPosition: "bottom-left"
+            property int toastDuration: 6000
+            property real toastHorizontalOffset: 0
+            property real toastVerticalOffset: 0
+            property string toastScreenMode: "current active screen"
+            property string toastScreen: ""
+            property bool toastTendrils: true
+            property real toastTendrilsPer100px: 1.5
+            property int toastTendrilMaxActive: 6
+            property bool toastExtraTendrils: false
+            property int toastExtraTendrilCount: 2
+            property real toastExtraTendrilReach: 0.45
+            property real toastExtraTendrilRootSpread: 0.30
+            property real toastExtraTendrilPanelSpread: 0.90
+            property real toastExtraTendrilRootWidth: 5
+            property real toastExtraTendrilWaistWidth: 2
+            property real toastExtraTendrilPanelWidth: 3
+            property bool spikeOverride: false
+            property bool spikesEnabled: false
+            property real spikeFrequency: 3
+            property real spikeLength: 10
+            property real spikeVariance: 0.3
+            property real spikeSharpness: 0.75
+        }
+
         property JsonObject powerMenu: JsonObject {
             property int tendrilsPerSide: 1
             property real rootThickness: 16

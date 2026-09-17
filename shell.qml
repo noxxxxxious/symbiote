@@ -20,6 +20,13 @@ ShellRoot {
             SettingsController.toggleOn(Hyprland.focusedMonitor)
     }
 
+    GlobalShortcut {
+        appid: "faishell"
+        name: "toggleNotifications"
+        onPressed: if (Hyprland.focusedMonitor)
+            NotificationController.toggleOn(Hyprland.focusedMonitor)
+    }
+
     Variants {
         model: Quickshell.screens
 
@@ -62,16 +69,22 @@ ShellRoot {
                 readonly property var activeCenterPanel:
                     isSettingsActive ? settingsPanel : launcherPanel
 
+                readonly property bool peripheralSuppressed:
+                    launcherVisuallyOpen || settingsPanel.isOpen
+                    || powerMenu.visuallyOpen || notificationCenter.isOpen
+
                 visible:
                     launcherPanel.isOpen
                     || settingsPanel.visuallyOpen
                     || powerMenu.visuallyOpen
+                    || notificationCenter.visuallyOpen
+                    || notificationToast.visible
                     || !isScreenFullscreen
 
-                focusable: launcherPanel.isOpen || settingsPanel.isOpen || powerMenu.isOpen
+                focusable: launcherPanel.isOpen || settingsPanel.isOpen || powerMenu.isOpen || notificationCenter.isOpen
 
                 HyprlandFocusGrab {
-                    active: launcherPanel.isOpen || settingsPanel.isOpen || powerMenu.isOpen
+                    active: launcherPanel.isOpen || settingsPanel.isOpen || powerMenu.isOpen || notificationCenter.isOpen
                     windows: [screenRoot]
 
                     onCleared: {
@@ -79,6 +92,7 @@ ShellRoot {
                         if (LauncherController.isOpenOn(screenScope.modelData)) LauncherController.close()
                         if (SettingsController.isOpenOn(screenScope.modelData)) SettingsController.close()
                         if (PowerMenuController.isOpenOn(screenScope.modelData)) PowerMenuController.close()
+                        if (NotificationController.isOpenOn(screenScope.modelData)) NotificationController.close()
                     }
                 }
 
@@ -131,6 +145,22 @@ ShellRoot {
                         && settingsPanel.height >= settingsPanel.finalHeight * settingsPanel.tendrilActivationFraction
                 }
 
+                TendrilManager {
+                    id: notificationCenterTendrilManager
+                    panel: notificationCenter
+                    screenWidth: screenRoot.width
+                    screenHeight: screenRoot.height
+                    enabled: notificationCenter.isOpen
+                }
+
+                TendrilManager {
+                    id: notificationToastTendrilManager
+                    panel: notificationToast
+                    screenWidth: screenRoot.width
+                    screenHeight: screenRoot.height
+                    enabled: notificationToast.shown
+                }
+
                 // -------------------------------------------------------------
                 // Clock geometry
                 // -------------------------------------------------------------
@@ -168,8 +198,8 @@ ShellRoot {
                     Region {
                         x: 0
                         y: 0
-                        width: (screenRoot.launcherVisuallyOpen || settingsPanel.isOpen || powerMenu.visuallyOpen) ? screenRoot.width : 0
-                        height: (screenRoot.launcherVisuallyOpen || settingsPanel.isOpen || powerMenu.visuallyOpen) ? screenRoot.height : 0
+                        width: screenRoot.peripheralSuppressed ? screenRoot.width : 0
+                        height: screenRoot.peripheralSuppressed ? screenRoot.height : 0
                     }
 
                     // Keep the hot zone in the mask even while unavailable so
@@ -184,9 +214,19 @@ ShellRoot {
                         item: workspaceIndicator.enabled && workspaceIndicator.shown ? workspaceIndicator.hitSurface : null
                     }
 
+                    Region {
+                        item: notificationCenter.isOpen ? notificationCenter : null
+                    }
+                    Region {
+                        item: notificationToast.shown ? notificationToast : null
+                    }
+                    Region {
+                        item: notificationHotZone
+                    }
+
                     // Clock
                     Region {
-                        item: (!screenRoot.launcherVisuallyOpen && !settingsPanel.isOpen && !powerMenu.visuallyOpen && !clockPanel.isRetracted)
+                        item: (!screenRoot.peripheralSuppressed && !clockPanel.isRetracted)
                             ? clockHitbox : null
                     }
 
@@ -199,25 +239,23 @@ ShellRoot {
                     Region {
                         x: trayPanel.visualX
                         y: trayPanel.visualY
-                        width: (!screenRoot.launcherVisuallyOpen
-                                && !settingsPanel.isOpen && !powerMenu.visuallyOpen
+                        width: (!screenRoot.peripheralSuppressed
                                 && !trayPanel.isRetracted)
                             ? trayPanel.visualWidth : 0
-                        height: (!screenRoot.launcherVisuallyOpen
-                                 && !settingsPanel.isOpen && !powerMenu.visuallyOpen
+                        height: (!screenRoot.peripheralSuppressed
                                  && !trayPanel.isRetracted)
                             ? trayPanel.visualHeight : 0
                     }
 
                     // Tray edge summon zone (hot corner)
                     Region {
-                        x: (!screenRoot.launcherVisuallyOpen && !settingsPanel.isOpen && !powerMenu.visuallyOpen)
+                        x: !screenRoot.peripheralSuppressed
                             ? screenRoot.trayEdgeCornerX : 0
-                        y: (!screenRoot.launcherVisuallyOpen && !settingsPanel.isOpen && !powerMenu.visuallyOpen)
+                        y: !screenRoot.peripheralSuppressed
                             ? screenRoot.trayEdgeCornerY : 0
-                        width: (!screenRoot.launcherVisuallyOpen && !settingsPanel.isOpen && !powerMenu.visuallyOpen)
+                        width: !screenRoot.peripheralSuppressed
                             ? screenRoot.trayEdgeTriggerLength : 0
-                        height: (!screenRoot.launcherVisuallyOpen && !settingsPanel.isOpen && !powerMenu.visuallyOpen)
+                        height: !screenRoot.peripheralSuppressed
                             ? screenRoot.trayEdgeTriggerThickness : 0
                     }
 
@@ -225,12 +263,10 @@ ShellRoot {
                     Region {
                         x: trayPanel.popupPlateX
                         y: trayPanel.popupPlateY
-                        width: (!screenRoot.launcherVisuallyOpen
-                                && !settingsPanel.isOpen && !powerMenu.visuallyOpen
+                        width: (!screenRoot.peripheralSuppressed
                                 && trayPanel.popupVisible)
                             ? trayPanel.popupPlateWidth : 0
-                        height: (!screenRoot.launcherVisuallyOpen
-                                 && !settingsPanel.isOpen && !powerMenu.visuallyOpen
+                        height: (!screenRoot.peripheralSuppressed
                                  && trayPanel.popupVisible)
                             ? trayPanel.popupPlateHeight : 0
                     }
@@ -309,6 +345,20 @@ ShellRoot {
                     )
                     trayMenuWaistSmoothing: trayPanel.menuTendrilPanel.tendrilWaistSmoothingOverride
 
+                    notificationCenterX: notificationCenter.x
+                    notificationCenterY: notificationCenter.y
+                    notificationCenterWidth: notificationCenter.visuallyOpen ? notificationCenter.width : 0
+                    notificationCenterHeight: notificationCenter.visuallyOpen ? notificationCenter.height : 0
+                    notificationCenterRounding: notificationCenter.cornerRadii
+                    notificationCenterSlots: notificationCenterTendrilManager.slots
+
+                    notificationToastX: notificationToast.x
+                    notificationToastY: notificationToast.y
+                    notificationToastWidth: notificationToast.visible ? notificationToast.width : 0
+                    notificationToastHeight: notificationToast.visible ? notificationToast.height : 0
+                    notificationToastRounding: Qt.vector4d(notificationToast.cornerRounding, notificationToast.cornerRounding, notificationToast.cornerRounding, notificationToast.cornerRounding)
+                    notificationToastSlots: notificationToastTendrilManager.slots
+
                     // Workspace indicator is part of the same SDF scene as the
                     // border/panels. Its tendrils use the shared tendril pool.
                     workspaceEnabledF: workspaceIndicator.shaderEnabledF
@@ -348,6 +398,18 @@ ShellRoot {
                     onClicked: SettingsController.close()
                 }
 
+                MouseArea {
+                    anchors.fill: parent
+                    enabled: notificationCenter.isOpen
+                    onClicked: NotificationController.close()
+                }
+
+                Shortcut {
+                    sequence: "Escape"
+                    enabled: notificationCenter.isOpen
+                    onActivated: NotificationController.close()
+                }
+
                 // -------------------------------------------------------------
                 // Foreground widgets
                 // -------------------------------------------------------------
@@ -374,6 +436,22 @@ ShellRoot {
                                             "evading=", isEvading)
                 }
 
+                NotificationToast {
+                    id: notificationToast
+                    z: 18
+                    targetScreen: screenScope.modelData
+                    screenWidth: screenRoot.width
+                    screenHeight: screenRoot.height
+                }
+
+                NotificationCenter {
+                    id: notificationCenter
+                    z: 19
+                    targetScreen: screenScope.modelData
+                    screenWidth: screenRoot.width
+                    screenHeight: screenRoot.height
+                }
+
                 Launcher {
                     id: launcherPanel
                     targetScreen: screenScope.modelData
@@ -391,7 +469,7 @@ ShellRoot {
                     z: 22
                     targetScreen: screenScope.modelData
                     sharedHotZoneHovered: edge === "bottom" && powerTrigger.available && powerTrigger.containsMouse
-                    suppressed: screenRoot.launcherVisuallyOpen || settingsPanel.isOpen || powerMenu.visuallyOpen
+                    suppressed: screenRoot.peripheralSuppressed
                 }
 
                 PowerMenu {
@@ -408,11 +486,39 @@ ShellRoot {
                     anchors.bottom: parent.bottom
                     availableWidth: screenRoot.width
                     debugName: screenScope.modelData.name
+                    debugWorkspaceId: workspaceIndicator.currentId
                     hoverEnabled: true
-                    available: !powerMenu.visuallyOpen && !screenRoot.launcherVisuallyOpen && !settingsPanel.isOpen
+                    available: !screenRoot.peripheralSuppressed
                     onTriggered: {
-                        console.log("[shell] power trigger fired on", screenScope.modelData.name)
+                        console.log("[shell] power trigger fired",
+                                    "monitor=", screenScope.modelData.name,
+                                    "workspace=", workspaceIndicator.currentId,
+                                    "suppressed=", screenRoot.peripheralSuppressed,
+                                    "menuOpen=", powerMenu.isOpen,
+                                    "controllerScreen=", PowerMenuController.activeScreen)
                         PowerMenuController.openOn(screenScope.modelData)
+                        console.log("[shell] power trigger open requested",
+                                    "monitor=", screenScope.modelData.name,
+                                    "controllerScreen=", PowerMenuController.activeScreen)
+                    }
+                }
+
+                Item {
+                    id: notificationHotZone
+                    z: 21
+                    readonly property bool dockRight: Config.sAdapter.notifications.position.indexOf("right") !== -1
+                    readonly property bool dockBottom: Config.sAdapter.notifications.position.indexOf("bottom") !== -1
+                    // Corner trigger runs along the docked horizontal border.
+                    // This matches clock/tray behavior, avoids a tall edge strip,
+                    // and keeps each corner's hit area predictable.
+                    x: dockRight ? screenRoot.width - width : 0
+                    y: dockBottom ? screenRoot.height - height : 0
+                    width: Math.min(180, screenRoot.width * 0.25)
+                    height: Math.max(4, Theme.borderThickness / 2)
+                    enabled: !screenRoot.peripheralSuppressed || notificationCenter.isOpen
+                    HoverHandler {
+                        onHoveredChanged: if (hovered && !notificationCenter.isOpen)
+                            NotificationController.openOn(screenScope.modelData)
                     }
                 }
 
@@ -427,7 +533,7 @@ ShellRoot {
                     y: clockPanel.isBottom ? screenRoot.height - height : 0
                     width: clockPanel.finalWidth + clockPanel.margin + Theme.borderThickness
                     height: Math.max(4, Theme.borderThickness / 2)
-                    enabled: clockPanel.mode === "subdermal" && !screenRoot.launcherVisuallyOpen && !settingsPanel.isOpen && !powerMenu.visuallyOpen
+                    enabled: clockPanel.mode === "subdermal" && !screenRoot.peripheralSuppressed
                     HoverHandler {
                         onHoveredChanged: clockPanel.edgeHovered = hovered
                     }
@@ -439,7 +545,7 @@ ShellRoot {
                     y: clockPanel.mode === "subdermal" ? clockPanel.y : clockPanel.restingY
                     width: clockPanel.finalWidth
                     height: clockPanel.finalHeight
-                    enabled: !clockPanel.isRetracted && !screenRoot.launcherVisuallyOpen && !settingsPanel.isOpen && !powerMenu.visuallyOpen
+                    enabled: !clockPanel.isRetracted && !screenRoot.peripheralSuppressed
 
                     HoverHandler {
                         onHoveredChanged: {
@@ -461,13 +567,13 @@ ShellRoot {
                     clockPanel.mode === "parasitic"
                     && clockPanel.isRetracted
                     && !screenRoot.launcherVisuallyOpen
-                    && !settingsPanel.isOpen && !powerMenu.visuallyOpen
+                    && !screenRoot.peripheralSuppressed
                 readonly property bool trayReturnTracking:
                     trayPanel.mode === "parasitic"
                     && trayPanel.isEvading
                     && !trayPanel.isEngaged
                     && !screenRoot.launcherVisuallyOpen
-                    && !settingsPanel.isOpen && !powerMenu.visuallyOpen
+                    && !screenRoot.peripheralSuppressed
 
                 Timer {
                     interval: 150
@@ -521,8 +627,7 @@ ShellRoot {
                     height: screenRoot.trayEdgeTriggerThickness
 
                     enabled:
-                        !screenRoot.launcherVisuallyOpen
-                        && !settingsPanel.isOpen && !powerMenu.visuallyOpen
+                        !screenRoot.peripheralSuppressed
 
                     HoverHandler {
                         enabled: trayEdgeTrigger.enabled

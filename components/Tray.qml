@@ -1,3 +1,4 @@
+pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell
 import Quickshell.Widgets
@@ -19,8 +20,9 @@ Item {
     property real plateHeight: 44
     property real cornerRounding: 16
 
-    readonly property int itemCount:
-        SystemTray.items.values.length
+    readonly property int systemItemCount: SystemTray.items.values.length
+    readonly property bool hasNotificationIndicator: NotificationController.count > 0
+    readonly property int itemCount: systemItemCount + (hasNotificationIndicator ? 1 : 0)
 
     readonly property real itemStride:
         Theme.trayIconSize
@@ -542,6 +544,41 @@ Item {
     // Visible tray surface
     // -------------------------------------------------------------------------
 
+    component NotificationIndicator: MouseArea {
+        implicitWidth: Theme.trayIconSize + Theme.trayIconPaddingX * 2
+        implicitHeight: Theme.trayIconSize + Theme.trayIconPaddingY * 2
+        hoverEnabled: true
+        onClicked: {
+            root.summon()
+            NotificationController.toggleOn(root.targetScreen)
+        }
+
+        Text {
+            anchors.centerIn: parent
+            text: "●"
+            color: Theme.textColorAccent
+            font.pixelSize: 15
+        }
+
+        Rectangle {
+            anchors.right: parent.right
+            anchors.top: parent.top
+            anchors.rightMargin: 1
+            anchors.topMargin: -1
+            width: 15
+            height: 15
+            radius: 8
+            color: Theme.textColorAccent
+            Text {
+                anchors.centerIn: parent
+                text: NotificationController.count > 99 ? "99+" : String(NotificationController.count)
+                color: Theme.secondaryColor
+                font.pixelSize: NotificationController.count > 99 ? 7 : 9
+                font.bold: true
+            }
+        }
+    }
+
     Item {
         id: traySurface
         anchors.centerIn: parent
@@ -589,6 +626,14 @@ Item {
             id: iconRow
             anchors.centerIn: parent
             spacing: Theme.traySpacing
+
+            Loader {
+                active: root.hasNotificationIndicator && !root.isRight
+                // An inactive Loader still participates in Row spacing unless
+                // hidden. Remove both its icon width and its spacer.
+                visible: active
+                sourceComponent: NotificationIndicator {}
+            }
 
             Repeater {
                 model: SystemTray.items
@@ -640,6 +685,13 @@ Item {
                         source: TrayIcons.resolve(modelData.id, modelData.icon)
                     }
                 }
+            }
+
+            Loader {
+                active: root.hasNotificationIndicator && root.isRight
+                // See matching left-side indicator Loader above.
+                visible: active
+                sourceComponent: NotificationIndicator {}
             }
         }
     }

@@ -38,10 +38,12 @@ layout(std140, binding = 0) uniform buf {
     float clockSpikeSharpness;
     float traySpikeSharpness;
     float trayMenuSpikeSharpness;
+    float notificationSpikeSharpness;
     vec4 launcherSpikes;
     vec4 clockSpikes;
     vec4 traySpikes;
     vec4 trayMenuSpikes;
+    vec4 notificationSpikes;
     vec2 launcherPos;
     vec2 launcherSize;
     float launcherRounding;
@@ -64,6 +66,15 @@ layout(std140, binding = 0) uniform buf {
     vec4 trayMenuRounding;
     vec2 trayMenuTendrilBlend;
     float trayMenuWaistSmoothing;
+
+    // --- Notifications ---
+    vec2 notificationCenterPos;
+    vec2 notificationCenterSize;
+    vec4 notificationCenterRounding;
+    float notificationCenterJoinRadius;
+    vec2 notificationToastPos;
+    vec2 notificationToastSize;
+    vec4 notificationToastRounding;
 
     // --- Workspace Indicator geometry ---
     float workspaceEnabledF;
@@ -969,7 +980,23 @@ void main() {
     }
 
     // Combine all panels into scene
-    float panelsSDF = min(launcherSDF, min(clockSDF, min(traySDF, trayMenuSDF)));
+    float notificationCenterSDF = 1.0e4;
+    if (notificationCenterSize.x > 1.0 && notificationCenterSize.y > 1.0) {
+        vec2 center = notificationCenterPos + notificationCenterSize * 0.5;
+        notificationCenterSDF = spikedPanel(px - center, notificationCenterSize * 0.5,
+                                             notificationCenterRounding, notificationSpikes,
+                                             notificationSpikeSharpness);
+    }
+
+    float notificationToastSDF = 1.0e4;
+    if (notificationToastSize.x > 1.0 && notificationToastSize.y > 1.0) {
+        vec2 center = notificationToastPos + notificationToastSize * 0.5;
+        notificationToastSDF = spikedPanel(px - center, notificationToastSize * 0.5,
+                                            notificationToastRounding, notificationSpikes,
+                                            notificationSpikeSharpness);
+    }
+
+    float panelsSDF = min(launcherSDF, min(clockSDF, min(traySDF, min(trayMenuSDF, notificationToastSDF))));
     panelsSDF = min(panelsSDF, min(min(powerPanelSDF(px, powerRect0), powerPanelSDF(px, powerRect1)),
                                  min(powerPanelSDF(px, powerRect2), powerPanelSDF(px, powerRect3))));
     panelsSDF = min(panelsSDF, powerPanelSDF(px, powerRect4));
@@ -977,8 +1004,13 @@ void main() {
     float workspaceSDF = workspaceBodySDF(px);
     panelsSDF = min(panelsSDF, workspaceSDF);
 
-    float scene = min(ringSDF, panelsSDF);
-    float featureSDF = min(-organicInnerSDF, panelsSDF);
+    // Smooth union rounds the two concave joins where the center enters the
+    // screen border, producing the requested inverted-corner transition.
+    float borderWithCenter = notificationCenterSize.x > 1.0
+        ? smin(ringSDF, notificationCenterSDF, notificationCenterJoinRadius)
+        : ringSDF;
+    float scene = min(borderWithCenter, panelsSDF);
+    float featureSDF = min(-organicInnerSDF, min(panelsSDF, notificationCenterSDF));
 
     vec2 distances = vec2(scene, featureSDF);
     // ==== Generated combined tendril pass ====

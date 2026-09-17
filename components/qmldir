@@ -7,6 +7,8 @@ singleton HyprState 1.0 HyprState.qml
 singleton LauncherController 1.0 LauncherController.qml
 singleton SettingsController 1.0 SettingsController.qml
 singleton TrayIcons 1.0 TrayIcons.qml
+singleton DockingController 1.0 DockingController.qml
+singleton NotificationController 1.0 NotificationController.qml
 
 Border 1.0 Border.qml
 AnimatedPanel 1.0 AnimatedPanel.qml
@@ -19,6 +21,8 @@ FeatheredRect 1.0 FeatheredRect.qml
 AccentHighlight 1.0 AccentHighlight.qml
 Wallpaper 1.0 Wallpaper.qml
 Tray 1.0 Tray.qml
+NotificationCenter 1.0 NotificationCenter.qml
+NotificationToast 1.0 NotificationToast.qml
 
 singleton PowerMenuController 1.0 PowerMenuController.qml
 PowerMenu 1.0 PowerMenu.qml

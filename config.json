@@ -42,6 +42,39 @@
         "spikeVariance": 0.45,
         "spikesEnabled": true
     },
+    "notifications": {
+        "centerExtraTendrilCount": 3,
+        "centerExtraTendrilReach": 0.28,
+        "centerExtraTendrilRootSpread": 0.58,
+        "centerExtraTendrilTipSpread": 0.46,
+        "centerExtraTendrils": true,
+        "centerName": "Neuron Engagement",
+        "position": "bottom-right",
+        "spikeFrequency": 3,
+        "spikeLength": 11,
+        "spikeOverride": false,
+        "spikeSharpness": 0.8500000000000001,
+        "spikeVariance": 0.55,
+        "spikesEnabled": true,
+        "toastDuration": 15000,
+        "toastExtraTendrilCount": 2,
+        "toastExtraTendrilPanelSpread": 0.45,
+        "toastExtraTendrilPanelWidth": 3,
+        "toastExtraTendrilReach": 0.31,
+        "toastExtraTendrilRootSpread": 0.11,
+        "toastExtraTendrilRootWidth": 4.5,
+        "toastExtraTendrilWaistWidth": 2,
+        "toastExtraTendrils": true,
+        "toastHorizontalOffset": 8,
+        "toastName": "Synaptic Pulse",
+        "toastPosition": "bottom",
+        "toastScreen": "DP-3",
+        "toastScreenMode": "all screens",
+        "toastTendrilMaxActive": 16,
+        "toastTendrils": true,
+        "toastTendrilsPer100px": 5,
+        "toastVerticalOffset": 0
+    },
     "organicBorder": {
         "amplitude": 9.5,
         "amplitudeRange": 8,
@@ -161,7 +194,7 @@
     },
     "wallpaper": {
         "directory": "/home/nox/Pictures/Wallpapers",
-        "path": "/home/nox/Pictures/Wallpapers/gemini-catppuccin-macchiato-green-wallpaper-03-upscaled.png"
+        "path": ""
     },
     "workspaces": {
         "autoHide": true,
@@ -179,7 +212,7 @@
         "liquidSlingshot": 1,
         "nodeSpacing": 59,
         "revealDuration": 1500,
-        "showNumbers": false,
+        "showNumbers": true,
         "showOnChange": true,
         "tendrilCount": 9,
         "tendrilJitter": 14,

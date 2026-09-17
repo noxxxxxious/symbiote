@@ -106,6 +106,21 @@ Item {
     }
 
     function requestTrayMenuPreview() { if (root.isOpen) SettingsController.requestTrayMenuPreview() }
+    function toastScreenOptions() {
+        var names = []
+        for (var i = 0; i < Quickshell.screens.length; ++i)
+            names.push(Quickshell.screens[i].name)
+        return names
+    }
+    function sendTestNotification() {
+        testNotificationProcess.exec([
+            "notify-send",
+            Config.sAdapter.notifications.toastName,
+            "Test notification"
+        ])
+    }
+
+    Process { id: testNotificationProcess }
 
     Keys.onEscapePressed: SettingsController.close()
 
@@ -282,7 +297,7 @@ Item {
                                 spacing: 8
 
                                 Repeater {
-                                    model: ["All", "Panels", "Launcher", "Clock", "Tray", "Settings", "Power", "Workspaces", "Colors", "Border", "Shadows", "Wallpaper"]
+                                    model: ["All", "Border", "Clock", "Colors", "Launcher", "Notifications", "Panels", "Power", "Settings", "Shadows", "Tray", "Wallpaper", "Workspaces"]
 
                                     delegate: Rectangle {
                                         id: tabBtn
@@ -540,7 +555,7 @@ Item {
                                     ]
                                     value: Config.sAdapter.clock.position
                                     onCommit: function(val) {
-                                        Config.sAdapter.clock.position = val;
+                                        DockingController.move("clock", val);
                                     }
                                 }
 
@@ -779,7 +794,7 @@ Item {
                                     value: Config.sAdapter.tray.position
 
                                     onCommit: function(value) {
-                                        Config.sAdapter.tray.position = value
+                                        DockingController.move("tray", value)
                                         root.requestTrayMenuPreview()
                                     }
                                 }
@@ -917,7 +932,6 @@ Item {
 
                                 Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: "#33ffffff"; Layout.topMargin: 8; Layout.bottomMargin: 4 }
                                 Text { text: "TRAY MENU TENDRILS"; color: Theme.textColorAccent; font.bold: true; font.pixelSize: 12 }
-                                Text { Layout.fillWidth: true; text: "Horizontal = top/bottom screen border. Vertical = left/right screen border."; color: Theme.textColorSoft; font.pixelSize: 11; wrapMode: Text.WordWrap }
 
                                 Rectangle {
                                     Layout.preferredWidth: 150
@@ -1032,6 +1046,283 @@ Item {
                                     numStep: 0.01
                                     value: Config.sAdapter.tray.menuHorizontalTipSpread
                                     onCommit: function(value) { Config.sAdapter.tray.menuHorizontalTipSpread = Number(value); root.requestTrayMenuPreview() }
+                                }
+                            }
+
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                visible: contentCol.isTab("Notifications")
+                                      && contentCol.matches("Notifications", "Center Neuron Engagement Name Hot Zone Extra Tendrils Count Reach Root Tip Spread")
+                                Text { text: "NOTIFICATION CENTER"; color: Theme.textColorAccent; font.bold: true; font.pixelSize: 12 }
+                                SettingRow {
+                                    label: "Center Name"
+                                    value: Config.sAdapter.notifications.centerName
+                                    onCommit: function(value) { Config.sAdapter.notifications.centerName = value.trim() || "Neuron Engagement" }
+                                }
+                                SettingRow {
+                                    label: "Center Hot Zone"
+                                    isEnum: true
+                                    enumOptions: ["top-left", "top-right", "bottom-left", "bottom-right"]
+                                    value: Config.sAdapter.notifications.position
+                                    onCommit: function(value) { DockingController.move("notifications", value) }
+                                }
+                                SettingRow {
+                                    label: "Extra Tendrils"
+                                    isBool: true
+                                    boolVal: Config.sAdapter.notifications.centerExtraTendrils
+                                    onCommit: function(value) { Config.sAdapter.notifications.centerExtraTendrils = value }
+                                }
+                                SettingRow {
+                                    visible: Config.sAdapter.notifications.centerExtraTendrils
+                                    label: "Extra Tendril Count"
+                                    isNum: true
+                                    numMin: 0; numMax: 12; numStep: 1
+                                    value: Config.sAdapter.notifications.centerExtraTendrilCount
+                                    onCommit: function(value) { Config.sAdapter.notifications.centerExtraTendrilCount = Math.round(Number(value)) }
+                                }
+                                SettingRow {
+                                    visible: Config.sAdapter.notifications.centerExtraTendrils
+                                    label: "Extra Tendril Reach"
+                                    isNum: true
+                                    numMin: 0; numMax: 0.9; numStep: 0.01
+                                    value: Config.sAdapter.notifications.centerExtraTendrilReach
+                                    onCommit: function(value) { Config.sAdapter.notifications.centerExtraTendrilReach = Number(value) }
+                                }
+                                SettingRow {
+                                    visible: Config.sAdapter.notifications.centerExtraTendrils
+                                    label: "Extra Root Spread"
+                                    isNum: true
+                                    numMin: 0; numMax: 0.72; numStep: 0.01
+                                    value: Config.sAdapter.notifications.centerExtraTendrilRootSpread
+                                    onCommit: function(value) { Config.sAdapter.notifications.centerExtraTendrilRootSpread = Number(value) }
+                                }
+                                SettingRow {
+                                    visible: Config.sAdapter.notifications.centerExtraTendrils
+                                    label: "Extra Tip Spread"
+                                    isNum: true
+                                    numMin: 0; numMax: 0.58; numStep: 0.01
+                                    value: Config.sAdapter.notifications.centerExtraTendrilTipSpread
+                                    onCommit: function(value) { Config.sAdapter.notifications.centerExtraTendrilTipSpread = Number(value) }
+                                }
+                            }
+
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                visible: contentCol.isTab("Notifications")
+                                      && contentCol.matches("Notifications", "Toast Synaptic Pulse Send Test Name Position Duration Offset Screen Monitor Tendrils Density Maximum Extra Reach Count Root Waist Panel Width")
+                                Text { text: "NOTIFICATION TOAST"; color: Theme.textColorAccent; font.bold: true; font.pixelSize: 12 }
+                                Rectangle {
+                                    Layout.preferredWidth: Math.min(parent.width, notificationTestLabel.implicitWidth + 32)
+                                    Layout.preferredHeight: 30
+                                    radius: 6
+                                    color: Theme.secondaryColor
+                                    border.color: "transparent"
+                                    AccentHighlight { anchors.fill: parent; hovered: notificationTestMouse.containsMouse; radius: parent.radius }
+                                    Text {
+                                        id: notificationTestLabel
+                                        anchors.left: parent.left
+                                        anchors.right: parent.right
+                                        anchors.leftMargin: 16
+                                        anchors.rightMargin: 16
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        text: "Send Test " + Config.sAdapter.notifications.toastName
+                                        color: Theme.textColorAccent
+                                        font.pixelSize: 12
+                                        font.bold: true
+                                        horizontalAlignment: Text.AlignHCenter
+                                        elide: Text.ElideRight
+                                    }
+                                    MouseArea { id: notificationTestMouse; anchors.fill: parent; hoverEnabled: true; onClicked: root.sendTestNotification() }
+                                }
+                                SettingRow {
+                                    label: "Toast Name"
+                                    value: Config.sAdapter.notifications.toastName
+                                    onCommit: function(value) { Config.sAdapter.notifications.toastName = value.trim() || "Synaptic Pulse" }
+                                }
+                                SettingRow {
+                                    label: "Toast Position"
+                                    isEnum: true
+                                    enumOptions: ["top-left", "top", "top-right", "left", "right", "bottom-left", "bottom", "bottom-right"]
+                                    value: Config.sAdapter.notifications.toastPosition
+                                    onCommit: function(value) { Config.sAdapter.notifications.toastPosition = value }
+                                }
+                                SettingRow {
+                                    label: "Toast Duration (ms)"
+                                    isNum: true
+                                    numMin: 2500; numMax: 20000; numStep: 500
+                                    value: Config.sAdapter.notifications.toastDuration
+                                    onCommit: function(value) { Config.sAdapter.notifications.toastDuration = Math.round(Number(value)) }
+                                }
+                                SettingRow {
+                                    label: "Horizontal Offset (px)"
+                                    isNum: true
+                                    numMin: 0; numMax: 500; numStep: 1
+                                    value: Config.sAdapter.notifications.toastHorizontalOffset
+                                    onCommit: function(value) { Config.sAdapter.notifications.toastHorizontalOffset = Number(value) }
+                                }
+                                SettingRow {
+                                    label: "Vertical Offset (px)"
+                                    isNum: true
+                                    numMin: 0; numMax: 500; numStep: 1
+                                    value: Config.sAdapter.notifications.toastVerticalOffset
+                                    onCommit: function(value) { Config.sAdapter.notifications.toastVerticalOffset = Number(value) }
+                                }
+                                SettingRow {
+                                    label: "Toast Screen"
+                                    isEnum: true
+                                    enumOptions: ["current active screen", "all screens", "specific screen"]
+                                    value: Config.sAdapter.notifications.toastScreenMode
+                                    onCommit: function(value) {
+                                        Config.sAdapter.notifications.toastScreenMode = value
+                                        var screens = root.toastScreenOptions()
+                                        if (value === "specific screen" && screens.length > 0
+                                                && screens.indexOf(Config.sAdapter.notifications.toastScreen) === -1)
+                                            Config.sAdapter.notifications.toastScreen = screens[0]
+                                    }
+                                }
+                                SettingRow {
+                                    visible: Config.sAdapter.notifications.toastScreenMode === "specific screen"
+                                    label: "Specific Screen"
+                                    isEnum: true
+                                    enumOptions: root.toastScreenOptions()
+                                    value: Config.sAdapter.notifications.toastScreen
+                                    onCommit: function(value) { Config.sAdapter.notifications.toastScreen = value }
+                                }
+                                SettingRow {
+                                    label: "Enable Toast Tendrils"
+                                    isBool: true
+                                    boolVal: Config.sAdapter.notifications.toastTendrils
+                                    onCommit: function(value) { Config.sAdapter.notifications.toastTendrils = value }
+                                }
+                                SettingRow {
+                                    visible: Config.sAdapter.notifications.toastTendrils
+                                    label: "Toast Tendril Density"
+                                    isNum: true
+                                    numMin: 0; numMax: 5; numStep: 0.1
+                                    value: Config.sAdapter.notifications.toastTendrilsPer100px
+                                    onCommit: function(value) { Config.sAdapter.notifications.toastTendrilsPer100px = Number(value) }
+                                }
+                                SettingRow {
+                                    visible: Config.sAdapter.notifications.toastTendrils
+                                    label: "Toast Tendril Maximum"
+                                    isNum: true
+                                    numMin: 0; numMax: 24; numStep: 1
+                                    value: Config.sAdapter.notifications.toastTendrilMaxActive
+                                    onCommit: function(value) { Config.sAdapter.notifications.toastTendrilMaxActive = Math.round(Number(value)) }
+                                }
+                                Text {
+                                    Layout.topMargin: 8
+                                    text: "TOAST EXTRA TENDRILS"
+                                    color: Theme.textColorAccent
+                                    font.bold: true
+                                    font.pixelSize: 12
+                                }
+                                SettingRow {
+                                    label: "Extra Toast Tendrils"
+                                    isBool: true
+                                    boolVal: Config.sAdapter.notifications.toastExtraTendrils
+                                    onCommit: function(value) { Config.sAdapter.notifications.toastExtraTendrils = value }
+                                }
+                                SettingRow {
+                                    label: "Extra Tendril Count"
+                                    isNum: true
+                                    numMin: 0; numMax: 12; numStep: 1
+                                    value: Config.sAdapter.notifications.toastExtraTendrilCount
+                                    onCommit: function(value) { Config.sAdapter.notifications.toastExtraTendrilCount = Math.round(Number(value)) }
+                                }
+                                SettingRow {
+                                    label: "Extra Tendril Reach"
+                                    isNum: true
+                                    numMin: 0; numMax: 1; numStep: 0.01
+                                    value: Config.sAdapter.notifications.toastExtraTendrilReach
+                                    onCommit: function(value) { Config.sAdapter.notifications.toastExtraTendrilReach = Number(value) }
+                                }
+                                SettingRow {
+                                    label: "Extra Root Spread"
+                                    isNum: true
+                                    numMin: 0; numMax: 0.9; numStep: 0.01
+                                    value: Config.sAdapter.notifications.toastExtraTendrilRootSpread
+                                    onCommit: function(value) { Config.sAdapter.notifications.toastExtraTendrilRootSpread = Number(value) }
+                                }
+                                SettingRow {
+                                    label: "Extra Panel Spread"
+                                    isNum: true
+                                    numMin: 0; numMax: 1; numStep: 0.01
+                                    value: Config.sAdapter.notifications.toastExtraTendrilPanelSpread
+                                    onCommit: function(value) { Config.sAdapter.notifications.toastExtraTendrilPanelSpread = Number(value) }
+                                }
+                                SettingRow {
+                                    label: "Extra Root Width"
+                                    isNum: true
+                                    numMin: 1; numMax: 20; numStep: 0.5
+                                    value: Config.sAdapter.notifications.toastExtraTendrilRootWidth
+                                    onCommit: function(value) { Config.sAdapter.notifications.toastExtraTendrilRootWidth = Number(value) }
+                                }
+                                SettingRow {
+                                    label: "Extra Waist Width"
+                                    isNum: true
+                                    numMin: 0.5; numMax: 12; numStep: 0.5
+                                    value: Config.sAdapter.notifications.toastExtraTendrilWaistWidth
+                                    onCommit: function(value) { Config.sAdapter.notifications.toastExtraTendrilWaistWidth = Number(value) }
+                                }
+                                SettingRow {
+                                    label: "Extra Panel Width"
+                                    isNum: true
+                                    numMin: 1; numMax: 20; numStep: 0.5
+                                    value: Config.sAdapter.notifications.toastExtraTendrilPanelWidth
+                                    onCommit: function(value) { Config.sAdapter.notifications.toastExtraTendrilPanelWidth = Number(value) }
+                                }
+                            }
+
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                visible: contentCol.isTab("Notifications")
+                                      && contentCol.matches("Notifications", "Notification Spikes Frequency Length Sharpness Variance Override")
+                                Text { text: "NOTIFICATION SPIKES"; color: Theme.textColorAccent; font.bold: true; font.pixelSize: 12 }
+                                SettingRow {
+                                    label: "Override Global Spikes"
+                                    isBool: true
+                                    boolVal: Config.sAdapter.notifications.spikeOverride
+                                    onCommit: function(value) { Config.sAdapter.notifications.spikeOverride = value }
+                                }
+                                SettingRow {
+                                    visible: Config.sAdapter.notifications.spikeOverride
+                                    label: "Enable Spikes"
+                                    isBool: true
+                                    boolVal: Config.sAdapter.notifications.spikesEnabled
+                                    onCommit: function(value) { Config.sAdapter.notifications.spikesEnabled = value }
+                                }
+                                SettingRow {
+                                    visible: Config.sAdapter.notifications.spikeOverride && Config.sAdapter.notifications.spikesEnabled
+                                    label: "Frequency (per 100 px)"
+                                    isNum: true
+                                    numMin: 0.5; numMax: 10; numStep: 0.5
+                                    value: Config.sAdapter.notifications.spikeFrequency
+                                    onCommit: function(value) { Config.sAdapter.notifications.spikeFrequency = Number(value) }
+                                }
+                                SettingRow {
+                                    visible: Config.sAdapter.notifications.spikeOverride && Config.sAdapter.notifications.spikesEnabled
+                                    label: "Spike Length (px)"
+                                    isNum: true
+                                    numMin: 0; numMax: 40; numStep: 1
+                                    value: Config.sAdapter.notifications.spikeLength
+                                    onCommit: function(value) { Config.sAdapter.notifications.spikeLength = Number(value) }
+                                }
+                                SettingRow {
+                                    visible: Config.sAdapter.notifications.spikeOverride && Config.sAdapter.notifications.spikesEnabled
+                                    label: "Spike Sharpness"
+                                    isNum: true
+                                    numMin: 0; numMax: 1; numStep: 0.05
+                                    value: Config.sAdapter.notifications.spikeSharpness
+                                    onCommit: function(value) { Config.sAdapter.notifications.spikeSharpness = Number(value) }
+                                }
+                                SettingRow {
+                                    visible: Config.sAdapter.notifications.spikeOverride && Config.sAdapter.notifications.spikesEnabled
+                                    label: "Length Variance"
+                                    isNum: true
+                                    numMin: 0; numMax: 1; numStep: 0.05
+                                    value: Config.sAdapter.notifications.spikeVariance
+                                    onCommit: function(value) { Config.sAdapter.notifications.spikeVariance = Number(value) }
                                 }
                             }
 

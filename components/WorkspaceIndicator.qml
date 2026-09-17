@@ -81,7 +81,7 @@ Item {
         id: liquidDynamicsClock
         interval: 16
         repeat: true
-        running: root.enabled && root.liquidEnabledF > 0.5
+        running: root.shaderEnabledF && root.shaderEnabledF > 0.5
 
         onRunningChanged: {
             root.liquidLastTickMs = Date.now()

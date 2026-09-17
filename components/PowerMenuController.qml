@@ -13,6 +13,7 @@ QtObject {
         console.log("[PowerMenuController] open requested:", screen.name, "current:", activeScreen || "<none>")
         LauncherController.close()
         SettingsController.close()
+        NotificationController.close()
         activeScreen = screen.name
     }
     function close() {
