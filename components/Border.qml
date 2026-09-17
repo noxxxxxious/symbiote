@@ -22,6 +22,7 @@ ShaderEffect {
         return Qt.vector4d(c.spikesEnabled ? 1 : 0, c.spikeFrequency, c.spikeLength, c.spikeVariance)
     }
     property vector4d launcherSpikes: spikeProfile(Config.sAdapter.launcher)
+    property vector4d dashboardSpikes: spikeProfile(Config.sAdapter.panels)
     property vector4d clockSpikes: spikeProfile(Config.sAdapter.clock)
     property vector4d traySpikes: spikeProfile(Config.sAdapter.tray)
     property vector4d trayMenuSpikes: spikeProfile(Config.sAdapter.trayMenu)
@@ -31,6 +32,7 @@ ShaderEffect {
         return (local.spikeOverride ? local : Config.sAdapter.panels).spikeSharpness
     }
     property real launcherSpikeSharpness: spikeSharpness(Config.sAdapter.launcher)
+    property real dashboardSpikeSharpness: spikeSharpness(Config.sAdapter.panels)
     property real clockSpikeSharpness: spikeSharpness(Config.sAdapter.clock)
     property real traySpikeSharpness: spikeSharpness(Config.sAdapter.tray)
     property real trayMenuSpikeSharpness: spikeSharpness(Config.sAdapter.trayMenu)
@@ -111,6 +113,17 @@ ShaderEffect {
     property vector2d launcherPos: Qt.vector2d(launcherX, launcherY)
     property vector2d launcherSize: Qt.vector2d(launcherWidth, launcherHeight)
 
+    // --- Dedicated Dashboard Geometry ---
+    property real dashboardX: 0
+    property real dashboardY: 0
+    property real dashboardWidth: 0
+    property real dashboardHeight: 0
+    property real dashboardRounding: 24
+    property vector2d dashboardPos: Qt.vector2d(dashboardX, dashboardY)
+    property vector2d dashboardSize: Qt.vector2d(dashboardWidth, dashboardHeight)
+    property var dashboardSlots: []
+    property vector2d dashboardTendrilBlend: Qt.vector2d(34, 24)
+    property real dashboardWaistSmoothing: 54
 
     // Dedicated Clock Geometry
     property real clockX: 0
@@ -260,6 +273,16 @@ ShaderEffect {
                 launcherTendrilBlend.x,
                 launcherTendrilBlend.y,
                 launcherWaistSmoothing,
+                0
+            )
+        );
+
+        collect(
+            dashboardSlots || [],
+            Qt.vector4d(
+                dashboardTendrilBlend.x,
+                dashboardTendrilBlend.y,
+                dashboardWaistSmoothing,
                 0
             )
         );

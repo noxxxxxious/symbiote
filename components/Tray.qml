@@ -289,7 +289,10 @@ Item {
             for (var i = 0; i < verticalCount; i++) {
                 var reach = distributedReach(tendrilExtraVerticalReach, i, verticalCount, tendrilExtraVerticalReachSpread)
                 var tip = distributedTip(i, verticalCount, tendrilExtraVerticalTipSpread, isRight)
-                specs.push({ side: "extra-vertical", rootX: borderX, rootY: fromBottom ? bottom - usableHeight * reach : top + usableHeight * reach, tipX: x + width * tip, tipY: tipY })
+                // Root is measured from moving tray edge, not static screen
+                // geometry. It therefore follows tray retraction/expansion on
+                // left/right borders and cannot drift behind tray surface.
+                specs.push({ side: "extra-vertical", rootX: borderX, rootY: clampValue(fromBottom ? tipY - usableHeight * reach : tipY + usableHeight * reach, top, bottom), tipX: x + width * tip, tipY: tipY })
             }
         }
 
@@ -429,14 +432,14 @@ Item {
 
     readonly property real popupTargetX: Math.max(menuScreenMargin, Math.min(screenWidth - menuScreenMargin - popupPlateWidth, unclampedPopupTargetX))
 
-    readonly property real popupTargetHeight:
-        Math.min(260, Math.max(32, menuList.contentHeight + 16))
-
     // Keep one edge fixed while height animates. Bottom-aligned menus grow upward
     // from a stationary bottom edge; top-aligned menus grow downward from a
     // stationary top edge. popupTargetY is the final resting Y for diagnostics.
     readonly property real popupTopAnchorY: menuBaseY + menuBaseHeight + menuGap
     readonly property real popupBottomAnchorY: menuBaseY - menuGap
+    // No height cap. Large menus intentionally grow beyond prior 260px limit.
+    readonly property real popupTargetHeight:
+        Math.max(32, menuList.contentHeight + 16)
     readonly property real popupTargetY: isBottom ? popupBottomAnchorY - popupTargetHeight : popupTopAnchorY
 
     readonly property real popupPlateX: root.x + popupPlate.x
@@ -817,4 +820,3 @@ Item {
         }
     }
 }
-

@@ -1,12 +1,13 @@
 {
     "counts": {
-        "com.obsproject.Studio": 7,
+        "com.obsproject.Studio": 8,
         "gimp": 1,
         "google-chrome": 6,
-        "kitty": 6,
+        "kitty": 7,
         "obsidian": 2,
+        "org.gnome.gedit": 1,
         "proton-mail": 2,
-        "teams-for-linux": 7,
+        "teams-for-linux": 8,
         "vesktop": 7,
         "zen": 12
     }

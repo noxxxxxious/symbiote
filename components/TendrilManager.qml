@@ -64,6 +64,11 @@ QtObject {
         function onTendrilPanelThicknessRangeOverrideChanged() { manager.markDirty() }
         function onTendrilGrowSpeedOverrideChanged() { manager.markDirty() }
         function onTendrilShrinkSpeedOverrideChanged() { manager.markDirty() }
+        function onTendrilRerollKeyChanged() {
+            manager.perimeterPhase = Math.random()
+            manager.initSlots()
+            manager.markDirty()
+        }
 
         function onTendrilExtraConnectionsChanged() { manager.markDirty() }
         function onTendrilExtraCountChanged() { manager.markDirty() }
@@ -537,10 +542,15 @@ QtObject {
         slot.breakTipX = spec.tipX;
         slot.breakTipY = spec.tipY;
 
-        slot.rootThick = randRange(extraRootThicknessRange());
-        slot.waistThick = randRange(extraWaistThicknessRange());
-        slot.panelThick = randRange(extraPanelThicknessRange());
-        slot.maxLength = randRange(extraMaxLengthRange());
+        var rootRange = spec.rootThicknessRange || extraRootThicknessRange();
+        var waistRange = spec.waistThicknessRange || extraWaistThicknessRange();
+        var panelRange = spec.panelThicknessRange || extraPanelThicknessRange();
+        var lengthRange = spec.maxLengthRange || extraMaxLengthRange();
+
+        slot.rootThick = randRange(rootRange);
+        slot.waistThick = randRange(waistRange);
+        slot.panelThick = randRange(panelRange);
+        slot.maxLength = randRange(lengthRange);
 
         slot.active = true;
     }
@@ -961,4 +971,3 @@ QtObject {
         onTriggered: manager.tick()
     }
 }
-

@@ -317,7 +317,7 @@ Item {
                                 spacing: 8
 
                                 Repeater {
-                                    model: ["All", "Border", "Clock", "Colors", "Launcher", "Notifications", "Panels", "Power", "Settings", "Shadows", "Tray", "Wallpaper", "Workspaces"]
+                                    model: ["All", "Border", "Clock", "Colors", "Dashboard", "Launcher", "Notifications", "Panels", "Power", "Settings", "Shadows", "Tray", "Wallpaper", "Workspaces"]
 
                                     delegate: Rectangle {
                                         id: tabBtn
@@ -530,6 +530,118 @@ Item {
                                     value: Config.sAdapter.launcher.spikeVariance
                                     onCommit: function(value) { Config.sAdapter.launcher.spikeVariance = Number(value); }
                                 }
+                            }
+
+
+                            // -------------------------------------------------------------------------
+                            // Dashboard
+                            // -------------------------------------------------------------------------
+                            ColumnLayout {
+                                visible: contentCol.isTab("Dashboard") && contentCol.matches(
+                                    "Dashboard",
+                                    "Panel Width Height Gap Rounding Close Info Labels Names Organism Nucleus Synapses Genome Processor Memory Storage Tendril Top Normal Density Active Length Root Waist Tip Blend Smoothing Grow Shrink Extra Side Bottom Count Reach Spread"
+                                )
+                                Layout.fillWidth: true
+                                spacing: 8
+
+                                Text { text: "DASHBOARD"; color: Theme.textColorAccent; font.bold: true; font.pixelSize: 12 }
+                                SettingRow { label: "Panel Width (px)"; isNum: true; numMin: 480; numMax: 1600; numStep: 10; value: Config.sAdapter.dashboard.width; onCommit: function(value) { Config.sAdapter.dashboard.width = Number(value) } }
+                                SettingRow { label: "Panel Height (px)"; isNum: true; numMin: 300; numMax: 800; numStep: 10; value: Config.sAdapter.dashboard.height; onCommit: function(value) { Config.sAdapter.dashboard.height = Number(value) } }
+                                SettingRow { label: "Top Gap (px)"; isNum: true; numMin: 0; numMax: 160; numStep: 1; value: Config.sAdapter.dashboard.topGap; onCommit: function(value) { Config.sAdapter.dashboard.topGap = Number(value) } }
+                                SettingRow { label: "Corner Rounding (px)"; isNum: true; numMin: 0; numMax: 80; numStep: 1; value: Config.sAdapter.dashboard.cornerRounding; onCommit: function(value) { Config.sAdapter.dashboard.cornerRounding = Number(value) } }
+                                SettingRow { label: "Close Delay (ms)"; isNum: true; numMin: 100; numMax: 2500; numStep: 50; value: Config.sAdapter.dashboard.closeDelay; onCommit: function(value) { Config.sAdapter.dashboard.closeDelay = Math.round(Number(value)) } }
+
+                                Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: "#33ffffff"; Layout.topMargin: 8; Layout.bottomMargin: 4 }
+                                Text { text: "INFO LABELS"; color: Theme.textColorAccent; font.bold: true; font.pixelSize: 12 }
+
+                                SettingRow {
+                                    label: "System / Identity"
+                                    value: Config.sAdapter.dashboard.infoSystemName
+                                    onCommit: function(value) {
+                                        Config.sAdapter.dashboard.infoSystemName = String(value).trim()
+                                    }
+                                }
+
+                                SettingRow {
+                                    label: "Processor"
+                                    value: Config.sAdapter.dashboard.infoProcessorName
+                                    onCommit: function(value) {
+                                        Config.sAdapter.dashboard.infoProcessorName = String(value).trim()
+                                    }
+                                }
+
+                                SettingRow {
+                                    label: "Memory"
+                                    value: Config.sAdapter.dashboard.infoMemoryName
+                                    onCommit: function(value) {
+                                        Config.sAdapter.dashboard.infoMemoryName = String(value).trim()
+                                    }
+                                }
+
+                                SettingRow {
+                                    label: "Storage"
+                                    value: Config.sAdapter.dashboard.infoStorageName
+                                    onCommit: function(value) {
+                                        Config.sAdapter.dashboard.infoStorageName = String(value).trim()
+                                    }
+                                }
+
+                                Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: "#33ffffff"; Layout.topMargin: 8; Layout.bottomMargin: 4 }
+                                Text { text: "NORMAL TOP TENDRILS"; color: Theme.textColorAccent; font.bold: true; font.pixelSize: 12 }
+                                SettingRow { label: "Enable Top Tendrils"; isBool: true; boolVal: Config.sAdapter.dashboard.tendrils; onCommit: function(value) { Config.sAdapter.dashboard.tendrils = value } }
+                                SettingRow { visible: Config.sAdapter.dashboard.tendrils; label: "Density (per 100 px)"; isNum: true; numMin: 0.1; numMax: 5; numStep: 0.1; value: Config.sAdapter.dashboard.tendrilsPer100px; onCommit: function(value) { Config.sAdapter.dashboard.tendrilsPer100px = Number(value) } }
+                                SettingRow { visible: Config.sAdapter.dashboard.tendrils; label: "Maximum Active"; isNum: true; numMin: 1; numMax: 16; numStep: 1; value: Config.sAdapter.dashboard.tendrilMaxActive; onCommit: function(value) { Config.sAdapter.dashboard.tendrilMaxActive = Math.round(Number(value)) } }
+                                SettingRow { visible: Config.sAdapter.dashboard.tendrils; label: "Maximum Top"; isNum: true; numMin: 1; numMax: 16; numStep: 1; value: Config.sAdapter.dashboard.tendrilMaxTop; onCommit: function(value) { Config.sAdapter.dashboard.tendrilMaxTop = Math.round(Number(value)) } }
+                                SettingRow { visible: Config.sAdapter.dashboard.tendrils; label: "Length Min (px)"; isNum: true; numMin: 5; numMax: 600; numStep: 5; value: Config.sAdapter.dashboard.tendrilMinLength; onCommit: function(value) { Config.sAdapter.dashboard.tendrilMinLength = Number(value) } }
+                                SettingRow { visible: Config.sAdapter.dashboard.tendrils; label: "Length Max (px)"; isNum: true; numMin: 10; numMax: 1000; numStep: 5; value: Config.sAdapter.dashboard.tendrilMaxLength; onCommit: function(value) { Config.sAdapter.dashboard.tendrilMaxLength = Number(value) } }
+                                SettingRow { visible: Config.sAdapter.dashboard.tendrils; label: "Root Width Min (px)"; isNum: true; numMin: 0.5; numMax: 60; numStep: 0.5; value: Config.sAdapter.dashboard.tendrilRootMinWidth; onCommit: function(value) { Config.sAdapter.dashboard.tendrilRootMinWidth = Number(value) } }
+                                SettingRow { visible: Config.sAdapter.dashboard.tendrils; label: "Root Width Max (px)"; isNum: true; numMin: 0.5; numMax: 80; numStep: 0.5; value: Config.sAdapter.dashboard.tendrilRootMaxWidth; onCommit: function(value) { Config.sAdapter.dashboard.tendrilRootMaxWidth = Number(value) } }
+                                SettingRow { visible: Config.sAdapter.dashboard.tendrils; label: "Waist Width Min (px)"; isNum: true; numMin: 0.5; numMax: 30; numStep: 0.5; value: Config.sAdapter.dashboard.tendrilWaistMinWidth; onCommit: function(value) { Config.sAdapter.dashboard.tendrilWaistMinWidth = Number(value) } }
+                                SettingRow { visible: Config.sAdapter.dashboard.tendrils; label: "Waist Width Max (px)"; isNum: true; numMin: 0.5; numMax: 40; numStep: 0.5; value: Config.sAdapter.dashboard.tendrilWaistMaxWidth; onCommit: function(value) { Config.sAdapter.dashboard.tendrilWaistMaxWidth = Number(value) } }
+                                SettingRow { visible: Config.sAdapter.dashboard.tendrils; label: "Tip Width Min (px)"; isNum: true; numMin: 0.5; numMax: 40; numStep: 0.5; value: Config.sAdapter.dashboard.tendrilTipMinWidth; onCommit: function(value) { Config.sAdapter.dashboard.tendrilTipMinWidth = Number(value) } }
+                                SettingRow { visible: Config.sAdapter.dashboard.tendrils; label: "Tip Width Max (px)"; isNum: true; numMin: 0.5; numMax: 60; numStep: 0.5; value: Config.sAdapter.dashboard.tendrilTipMaxWidth; onCommit: function(value) { Config.sAdapter.dashboard.tendrilTipMaxWidth = Number(value) } }
+                                SettingRow { visible: Config.sAdapter.dashboard.tendrils; label: "Root Blend Radius"; isNum: true; numMin: 0; numMax: 100; numStep: 1; value: Config.sAdapter.dashboard.tendrilRootBlend; onCommit: function(value) { Config.sAdapter.dashboard.tendrilRootBlend = Number(value) } }
+                                SettingRow { visible: Config.sAdapter.dashboard.tendrils; label: "Tip Blend Radius"; isNum: true; numMin: 0; numMax: 100; numStep: 1; value: Config.sAdapter.dashboard.tendrilTipBlend; onCommit: function(value) { Config.sAdapter.dashboard.tendrilTipBlend = Number(value) } }
+                                SettingRow { visible: Config.sAdapter.dashboard.tendrils; label: "Waist Smoothing"; isNum: true; numMin: 0; numMax: 160; numStep: 1; value: Config.sAdapter.dashboard.tendrilWaistSmoothing; onCommit: function(value) { Config.sAdapter.dashboard.tendrilWaistSmoothing = Number(value) } }
+                                SettingRow { visible: Config.sAdapter.dashboard.tendrils; label: "Grow Speed"; isNum: true; numMin: 0.01; numMax: 0.8; numStep: 0.01; value: Config.sAdapter.dashboard.tendrilGrowSpeed; onCommit: function(value) { Config.sAdapter.dashboard.tendrilGrowSpeed = Number(value) } }
+                                SettingRow { visible: Config.sAdapter.dashboard.tendrils; label: "Shrink Speed"; isNum: true; numMin: 0.01; numMax: 0.8; numStep: 0.01; value: Config.sAdapter.dashboard.tendrilShrinkSpeed; onCommit: function(value) { Config.sAdapter.dashboard.tendrilShrinkSpeed = Number(value) } }
+
+                                Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: "#33ffffff"; Layout.topMargin: 8; Layout.bottomMargin: 4 }
+                                Text { text: "EXTRA TENDRILS"; color: Theme.textColorAccent; font.bold: true; font.pixelSize: 12 }
+                                SettingRow { label: "Enable Extra Tendrils"; isBool: true; boolVal: Config.sAdapter.dashboard.extraTendrils; onCommit: function(value) { Config.sAdapter.dashboard.extraTendrils = value } }
+                                SettingRow { visible: Config.sAdapter.dashboard.extraTendrils; label: "Extra Grow Speed"; isNum: true; numMin: 0.01; numMax: 0.8; numStep: 0.01; value: Config.sAdapter.dashboard.extraGrowSpeed; onCommit: function(value) { Config.sAdapter.dashboard.extraGrowSpeed = Number(value) } }
+                                SettingRow { visible: Config.sAdapter.dashboard.extraTendrils; label: "Extra Shrink Speed"; isNum: true; numMin: 0.01; numMax: 0.8; numStep: 0.01; value: Config.sAdapter.dashboard.extraShrinkSpeed; onCommit: function(value) { Config.sAdapter.dashboard.extraShrinkSpeed = Number(value) } }
+
+                                Rectangle { visible: Config.sAdapter.dashboard.extraTendrils; Layout.fillWidth: true; Layout.preferredHeight: 1; color: "#33ffffff"; Layout.topMargin: 8; Layout.bottomMargin: 4 }
+                                Text { visible: Config.sAdapter.dashboard.extraTendrils; text: "SIDE EXTRA TENDRILS"; color: Theme.textColorAccent; font.bold: true; font.pixelSize: 12 }
+                                SettingRow { visible: Config.sAdapter.dashboard.extraTendrils; label: "Enable Side Extras"; isBool: true; boolVal: Config.sAdapter.dashboard.sideExtraTendrils; onCommit: function(value) { Config.sAdapter.dashboard.sideExtraTendrils = value } }
+                                SettingRow { visible: Config.sAdapter.dashboard.extraTendrils && Config.sAdapter.dashboard.sideExtraTendrils; label: "Count Per Side"; isNum: true; numMin: 0; numMax: 8; numStep: 1; value: Config.sAdapter.dashboard.sideExtraCount; onCommit: function(value) { Config.sAdapter.dashboard.sideExtraCount = Math.round(Number(value)) } }
+                                SettingRow { visible: Config.sAdapter.dashboard.extraTendrils && Config.sAdapter.dashboard.sideExtraTendrils; label: "Root Reach Down Screen"; isNum: true; numMin: 0.02; numMax: 0.95; numStep: 0.01; value: Config.sAdapter.dashboard.sideExtraRootReach; onCommit: function(value) { Config.sAdapter.dashboard.sideExtraRootReach = Number(value) } }
+                                SettingRow { visible: Config.sAdapter.dashboard.extraTendrils && Config.sAdapter.dashboard.sideExtraTendrils; label: "Root Spread"; isNum: true; numMin: 0; numMax: 0.90; numStep: 0.01; value: Config.sAdapter.dashboard.sideExtraRootSpread; onCommit: function(value) { Config.sAdapter.dashboard.sideExtraRootSpread = Number(value) } }
+                                SettingRow { visible: Config.sAdapter.dashboard.extraTendrils && Config.sAdapter.dashboard.sideExtraTendrils; label: "Tip Spread"; isNum: true; numMin: 0; numMax: 1; numStep: 0.01; value: Config.sAdapter.dashboard.sideExtraTipSpread; onCommit: function(value) { Config.sAdapter.dashboard.sideExtraTipSpread = Number(value) } }
+                                SettingRow { visible: Config.sAdapter.dashboard.extraTendrils && Config.sAdapter.dashboard.sideExtraTendrils; label: "Length Min (px)"; isNum: true; numMin: 50; numMax: 2200; numStep: 10; value: Config.sAdapter.dashboard.sideExtraMinLength; onCommit: function(value) { Config.sAdapter.dashboard.sideExtraMinLength = Number(value) } }
+                                SettingRow { visible: Config.sAdapter.dashboard.extraTendrils && Config.sAdapter.dashboard.sideExtraTendrils; label: "Length Max (px)"; isNum: true; numMin: 100; numMax: 3200; numStep: 10; value: Config.sAdapter.dashboard.sideExtraMaxLength; onCommit: function(value) { Config.sAdapter.dashboard.sideExtraMaxLength = Number(value) } }
+                                SettingRow { visible: Config.sAdapter.dashboard.extraTendrils && Config.sAdapter.dashboard.sideExtraTendrils; label: "Root Width Min (px)"; isNum: true; numMin: 0.5; numMax: 60; numStep: 0.5; value: Config.sAdapter.dashboard.sideExtraRootMinWidth; onCommit: function(value) { Config.sAdapter.dashboard.sideExtraRootMinWidth = Number(value) } }
+                                SettingRow { visible: Config.sAdapter.dashboard.extraTendrils && Config.sAdapter.dashboard.sideExtraTendrils; label: "Root Width Max (px)"; isNum: true; numMin: 0.5; numMax: 80; numStep: 0.5; value: Config.sAdapter.dashboard.sideExtraRootMaxWidth; onCommit: function(value) { Config.sAdapter.dashboard.sideExtraRootMaxWidth = Number(value) } }
+                                SettingRow { visible: Config.sAdapter.dashboard.extraTendrils && Config.sAdapter.dashboard.sideExtraTendrils; label: "Waist Width Min (px)"; isNum: true; numMin: 0.5; numMax: 30; numStep: 0.5; value: Config.sAdapter.dashboard.sideExtraWaistMinWidth; onCommit: function(value) { Config.sAdapter.dashboard.sideExtraWaistMinWidth = Number(value) } }
+                                SettingRow { visible: Config.sAdapter.dashboard.extraTendrils && Config.sAdapter.dashboard.sideExtraTendrils; label: "Waist Width Max (px)"; isNum: true; numMin: 0.5; numMax: 40; numStep: 0.5; value: Config.sAdapter.dashboard.sideExtraWaistMaxWidth; onCommit: function(value) { Config.sAdapter.dashboard.sideExtraWaistMaxWidth = Number(value) } }
+                                SettingRow { visible: Config.sAdapter.dashboard.extraTendrils && Config.sAdapter.dashboard.sideExtraTendrils; label: "Tip Width Min (px)"; isNum: true; numMin: 0.5; numMax: 40; numStep: 0.5; value: Config.sAdapter.dashboard.sideExtraTipMinWidth; onCommit: function(value) { Config.sAdapter.dashboard.sideExtraTipMinWidth = Number(value) } }
+                                SettingRow { visible: Config.sAdapter.dashboard.extraTendrils && Config.sAdapter.dashboard.sideExtraTendrils; label: "Tip Width Max (px)"; isNum: true; numMin: 0.5; numMax: 60; numStep: 0.5; value: Config.sAdapter.dashboard.sideExtraTipMaxWidth; onCommit: function(value) { Config.sAdapter.dashboard.sideExtraTipMaxWidth = Number(value) } }
+
+                                Rectangle { visible: Config.sAdapter.dashboard.extraTendrils; Layout.fillWidth: true; Layout.preferredHeight: 1; color: "#33ffffff"; Layout.topMargin: 8; Layout.bottomMargin: 4 }
+                                Text { visible: Config.sAdapter.dashboard.extraTendrils; text: "BOTTOM EXTRA TENDRILS"; color: Theme.textColorAccent; font.bold: true; font.pixelSize: 12 }
+                                SettingRow { visible: Config.sAdapter.dashboard.extraTendrils; label: "Enable Bottom Extras"; isBool: true; boolVal: Config.sAdapter.dashboard.bottomExtraTendrils; onCommit: function(value) { Config.sAdapter.dashboard.bottomExtraTendrils = value } }
+                                SettingRow { visible: Config.sAdapter.dashboard.extraTendrils && Config.sAdapter.dashboard.bottomExtraTendrils; label: "Bottom Count"; isNum: true; numMin: 0; numMax: 12; numStep: 1; value: Config.sAdapter.dashboard.bottomExtraCount; onCommit: function(value) { Config.sAdapter.dashboard.bottomExtraCount = Math.round(Number(value)) } }
+                                SettingRow { visible: Config.sAdapter.dashboard.extraTendrils && Config.sAdapter.dashboard.bottomExtraTendrils; label: "Root Spread"; isNum: true; numMin: 0; numMax: 1; numStep: 0.01; value: Config.sAdapter.dashboard.bottomExtraRootSpread; onCommit: function(value) { Config.sAdapter.dashboard.bottomExtraRootSpread = Number(value) } }
+                                SettingRow { visible: Config.sAdapter.dashboard.extraTendrils && Config.sAdapter.dashboard.bottomExtraTendrils; label: "Tip Spread"; isNum: true; numMin: 0; numMax: 1; numStep: 0.01; value: Config.sAdapter.dashboard.bottomExtraTipSpread; onCommit: function(value) { Config.sAdapter.dashboard.bottomExtraTipSpread = Number(value) } }
+                                SettingRow { visible: Config.sAdapter.dashboard.extraTendrils && Config.sAdapter.dashboard.bottomExtraTendrils; label: "Length Min (px)"; isNum: true; numMin: 50; numMax: 2200; numStep: 10; value: Config.sAdapter.dashboard.bottomExtraMinLength; onCommit: function(value) { Config.sAdapter.dashboard.bottomExtraMinLength = Number(value) } }
+                                SettingRow { visible: Config.sAdapter.dashboard.extraTendrils && Config.sAdapter.dashboard.bottomExtraTendrils; label: "Length Max (px)"; isNum: true; numMin: 100; numMax: 3200; numStep: 10; value: Config.sAdapter.dashboard.bottomExtraMaxLength; onCommit: function(value) { Config.sAdapter.dashboard.bottomExtraMaxLength = Number(value) } }
+                                SettingRow { visible: Config.sAdapter.dashboard.extraTendrils && Config.sAdapter.dashboard.bottomExtraTendrils; label: "Root Width Min (px)"; isNum: true; numMin: 0.5; numMax: 60; numStep: 0.5; value: Config.sAdapter.dashboard.bottomExtraRootMinWidth; onCommit: function(value) { Config.sAdapter.dashboard.bottomExtraRootMinWidth = Number(value) } }
+                                SettingRow { visible: Config.sAdapter.dashboard.extraTendrils && Config.sAdapter.dashboard.bottomExtraTendrils; label: "Root Width Max (px)"; isNum: true; numMin: 0.5; numMax: 80; numStep: 0.5; value: Config.sAdapter.dashboard.bottomExtraRootMaxWidth; onCommit: function(value) { Config.sAdapter.dashboard.bottomExtraRootMaxWidth = Number(value) } }
+                                SettingRow { visible: Config.sAdapter.dashboard.extraTendrils && Config.sAdapter.dashboard.bottomExtraTendrils; label: "Waist Width Min (px)"; isNum: true; numMin: 0.5; numMax: 30; numStep: 0.5; value: Config.sAdapter.dashboard.bottomExtraWaistMinWidth; onCommit: function(value) { Config.sAdapter.dashboard.bottomExtraWaistMinWidth = Number(value) } }
+                                SettingRow { visible: Config.sAdapter.dashboard.extraTendrils && Config.sAdapter.dashboard.bottomExtraTendrils; label: "Waist Width Max (px)"; isNum: true; numMin: 0.5; numMax: 40; numStep: 0.5; value: Config.sAdapter.dashboard.bottomExtraWaistMaxWidth; onCommit: function(value) { Config.sAdapter.dashboard.bottomExtraWaistMaxWidth = Number(value) } }
+                                SettingRow { visible: Config.sAdapter.dashboard.extraTendrils && Config.sAdapter.dashboard.bottomExtraTendrils; label: "Tip Width Min (px)"; isNum: true; numMin: 0.5; numMax: 40; numStep: 0.5; value: Config.sAdapter.dashboard.bottomExtraTipMinWidth; onCommit: function(value) { Config.sAdapter.dashboard.bottomExtraTipMinWidth = Number(value) } }
+                                SettingRow { visible: Config.sAdapter.dashboard.extraTendrils && Config.sAdapter.dashboard.bottomExtraTendrils; label: "Tip Width Max (px)"; isNum: true; numMin: 0.5; numMax: 60; numStep: 0.5; value: Config.sAdapter.dashboard.bottomExtraTipMaxWidth; onCommit: function(value) { Config.sAdapter.dashboard.bottomExtraTipMaxWidth = Number(value) } }
                             }
 
                             // --- Clock ---
@@ -2444,4 +2556,3 @@ Item {
         }
     }
 }
-

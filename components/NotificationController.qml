@@ -80,6 +80,7 @@ QtObject {
         LauncherController.close()
         SettingsController.close()
         PowerMenuController.close()
+        DashboardController.close()
         activeScreen = screen
     }
 
@@ -158,6 +159,17 @@ QtObject {
             if (notification)
                 notification.dismiss()
         }
+    }
+
+    function clearAllAndClose() {
+        clearAll()
+        clearCloseTimer.restart()
+    }
+
+    property Timer clearCloseTimer: Timer {
+        interval: 300
+        repeat: false
+        onTriggered: root.close()
     }
 
     property NotificationServer server: NotificationServer {

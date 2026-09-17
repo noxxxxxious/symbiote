@@ -9,12 +9,14 @@ singleton SettingsController 1.0 SettingsController.qml
 singleton TrayIcons 1.0 TrayIcons.qml
 singleton DockingController 1.0 DockingController.qml
 singleton NotificationController 1.0 NotificationController.qml
+singleton DashboardController 1.0 DashboardController.qml
 
 Border 1.0 Border.qml
 AnimatedPanel 1.0 AnimatedPanel.qml
 Launcher 1.0 Launcher.qml
 Clock 1.0 Clock.qml
 TendrilManager 1.0 TendrilManager.qml
+SystemInfo 1.0 SystemInfo.qml
 Exclusions 1.0 Exclusions.qml
 Settings 1.0 Settings.qml
 FeatheredRect 1.0 FeatheredRect.qml
@@ -23,6 +25,8 @@ Wallpaper 1.0 Wallpaper.qml
 Tray 1.0 Tray.qml
 NotificationCenter 1.0 NotificationCenter.qml
 NotificationToast 1.0 NotificationToast.qml
+Dashboard 1.0 Dashboard.qml
+DashboardTabs 1.0 DashboardTabs.qml
 
 singleton PowerMenuController 1.0 PowerMenuController.qml
 PowerMenu 1.0 PowerMenu.qml

@@ -35,11 +35,13 @@ layout(std140, binding = 0) uniform buf {
     vec4 powerSpikes;
     float powerSpikeSharpness;
     float launcherSpikeSharpness;
+    float dashboardSpikeSharpness;
     float clockSpikeSharpness;
     float traySpikeSharpness;
     float trayMenuSpikeSharpness;
     float notificationSpikeSharpness;
     vec4 launcherSpikes;
+    vec4 dashboardSpikes;
     vec4 clockSpikes;
     vec4 traySpikes;
     vec4 trayMenuSpikes;
@@ -47,6 +49,11 @@ layout(std140, binding = 0) uniform buf {
     vec2 launcherPos;
     vec2 launcherSize;
     float launcherRounding;
+
+    // --- Dedicated Dashboard geometry ---
+    vec2 dashboardPos;
+    vec2 dashboardSize;
+    float dashboardRounding;
 
     // --- Dedicated Clock geometry ---
     vec2 clockPos;
@@ -958,6 +965,12 @@ void main() {
         launcherSDF = spikedPanel(px - launcherCenter, launcherSize * 0.5, vec4(launcherRounding), launcherSpikes, launcherSpikeSharpness);
     }
 
+    float dashboardSDF = 1.0e4;
+    if (dashboardSize.x > 1.0 && dashboardSize.y > 1.0) {
+        vec2 dashboardCenter = dashboardPos + dashboardSize * 0.5;
+        dashboardSDF = spikedPanel(px - dashboardCenter, dashboardSize * 0.5, vec4(dashboardRounding), dashboardSpikes, dashboardSpikeSharpness);
+    }
+
     // Clock panel SDF
     float clockSDF = 1.0e4;
     if (clockSize.x > 1.0 && clockSize.y > 1.0) {
@@ -996,7 +1009,7 @@ void main() {
                                             notificationSpikeSharpness);
     }
 
-    float panelsSDF = min(launcherSDF, min(clockSDF, min(traySDF, min(trayMenuSDF, notificationToastSDF))));
+    float panelsSDF = min(dashboardSDF, min(launcherSDF, min(clockSDF, min(traySDF, min(trayMenuSDF, notificationToastSDF)))));
     panelsSDF = min(panelsSDF, min(min(powerPanelSDF(px, powerRect0), powerPanelSDF(px, powerRect1)),
                                  min(powerPanelSDF(px, powerRect2), powerPanelSDF(px, powerRect3))));
     panelsSDF = min(panelsSDF, powerPanelSDF(px, powerRect4));

@@ -20,18 +20,37 @@ FileView {
     // below instead of erroring out.
     printErrors: false
 
-    // Preserve FileView's safe atomic replacement behavior, but do not start a
-    // new QSaveFile write for every intermediate slider value. Settings controls
-    // can update dozens of times per second while dragging.
-    atomicWrites: true
+    // Direct writes avoid QSaveFile's random-suffix sibling files
+    // (config.json.XXXXXX). Settings are already debounced, so this remains a
+    // very small write and avoids littering the shell directory with stale
+    // atomic-write temporaries.
+    atomicWrites: false
+
+    // FileView reports changes caused by our own writes too. Ignore those for a
+    // short window so an internal save cannot turn into save -> reload -> save
+    // feedback, while still preserving hot reload for real external edits.
+    property bool internalWriteWindow: false
 
     watchChanges: true
-    onFileChanged: reload()
+    onFileChanged: {
+        if (!root.internalWriteWindow)
+            reload()
+    }
+
+    property Timer internalWriteGuard: Timer {
+        interval: 500
+        repeat: false
+        onTriggered: root.internalWriteWindow = false
+    }
 
     property Timer saveDebounce: Timer {
         interval: 300
         repeat: false
-        onTriggered: root.writeAdapter()
+        onTriggered: {
+            root.internalWriteWindow = true
+            root.writeAdapter()
+            internalWriteGuard.restart()
+        }
     }
 
     onAdapterUpdated: saveDebounce.restart()
@@ -61,6 +80,75 @@ FileView {
             property real spikeSharpness: 0.75
             property string backgroundColor: "" // panels.backgroundColor override
             property bool showIcons: true
+        }
+
+
+        property JsonObject dashboard: JsonObject {
+            // Panel geometry / interaction.
+            property real width: 920
+            property real height: 430
+            property real topGap: 26
+            property real cornerRounding: 24
+            property int closeDelay: 650
+
+            // Info-tab vocabulary. Presentation only: these names can be
+            // changed freely without affecting the metrics they represent.
+            property string infoSystemName: "Organism"
+            property string infoProcessorName: "Nucleus"
+            property string infoMemoryName: "Synapses"
+            property string infoStorageName: "Genome"
+
+            // Normal randomized tendrils. These attach only to the dashboard's top edge.
+            property bool tendrils: true
+            property real tendrilsPer100px: 0.70
+            property int tendrilMaxActive: 6
+            property int tendrilMaxTop: 6
+            property real tendrilMinLength: 45
+            property real tendrilMaxLength: 110
+            property real tendrilRootMinWidth: 7
+            property real tendrilRootMaxWidth: 14
+            property real tendrilWaistMinWidth: 2
+            property real tendrilWaistMaxWidth: 4
+            property real tendrilTipMinWidth: 5
+            property real tendrilTipMaxWidth: 9
+            property real tendrilRootBlend: 34
+            property real tendrilTipBlend: 24
+            property real tendrilWaistSmoothing: 54
+            property real tendrilGrowSpeed: 0.22
+            property real tendrilShrinkSpeed: 0.14
+
+            // Guaranteed long links. Side and bottom geometry/thickness are separate
+            // so each fan can be tuned independently.
+            property bool extraTendrils: false
+            property real extraGrowSpeed: 0.16
+            property real extraShrinkSpeed: 0.10
+
+            property bool sideExtraTendrils: true
+            property int sideExtraCount: 2
+            property real sideExtraRootReach: 0.20
+            property real sideExtraRootSpread: 0.14
+            property real sideExtraTipSpread: 0.70
+            property real sideExtraMinLength: 260
+            property real sideExtraMaxLength: 1600
+            property real sideExtraRootMinWidth: 5
+            property real sideExtraRootMaxWidth: 10
+            property real sideExtraWaistMinWidth: 1.5
+            property real sideExtraWaistMaxWidth: 3
+            property real sideExtraTipMinWidth: 3
+            property real sideExtraTipMaxWidth: 6
+
+            property bool bottomExtraTendrils: true
+            property int bottomExtraCount: 3
+            property real bottomExtraRootSpread: 0.42
+            property real bottomExtraTipSpread: 0.68
+            property real bottomExtraMinLength: 320
+            property real bottomExtraMaxLength: 1800
+            property real bottomExtraRootMinWidth: 5
+            property real bottomExtraRootMaxWidth: 10
+            property real bottomExtraWaistMinWidth: 1.5
+            property real bottomExtraWaistMaxWidth: 3
+            property real bottomExtraTipMinWidth: 3
+            property real bottomExtraTipMaxWidth: 6
         }
 
         property JsonObject clock: JsonObject {

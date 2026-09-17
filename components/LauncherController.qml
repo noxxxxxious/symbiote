@@ -18,6 +18,7 @@ QtObject {
         PowerMenuController.close()
         SettingsController.close();
         NotificationController.close();
+        DashboardController.close()
         activeScreen = screen.name;
     }
 

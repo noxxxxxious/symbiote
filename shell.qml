@@ -27,6 +27,13 @@ ShellRoot {
             NotificationController.toggleOn(Hyprland.focusedMonitor)
     }
 
+    GlobalShortcut {
+        appid: "faishell"
+        name: "toggleDashboard"
+        onPressed: if (Hyprland.focusedMonitor)
+            DashboardController.toggleOn(Hyprland.focusedMonitor)
+    }
+
     Variants {
         model: Quickshell.screens
 
@@ -55,6 +62,10 @@ ShellRoot {
                     LauncherController.isOpenOn(screenScope.modelData)
                 readonly property bool settingsIsOpen:
                     SettingsController.isOpenOn(screenScope.modelData)
+                readonly property bool dashboardIsOpen:
+                    DashboardController.isOpenOn(screenScope.modelData)
+                readonly property bool dashboardVisuallyOpen:
+                    dashboardPanel.visuallyOpen
 
                 property bool launcherResident: false
                 property bool settingsResident: false
@@ -124,15 +135,24 @@ ShellRoot {
                 readonly property var activeCenterPanel:
                     isSettingsActive ? settingsPanel : launcherPanel
 
-                readonly property bool peripheralSuppressed:
+                // UIs in this group intentionally capture the entire transparent
+                // shell surface while active. Dashboard is deliberately excluded.
+                readonly property bool fullScreenInteractionActive:
                     launcherIsOpen || launcherVisuallyOpen || settingsIsOpen || settingsVisuallyOpen
                     || powerMenu.visuallyOpen || notificationCenter.isOpen
+
+                // Dashboard still suppresses competing edge organisms while it is
+                // extended, but normal desktop clicks remain outside its input mask.
+                readonly property bool peripheralSuppressed:
+                    fullScreenInteractionActive || dashboardIsOpen || dashboardVisuallyOpen
 
                 visible:
                     launcherIsOpen
                     || launcherVisuallyOpen
                     || settingsIsOpen
                     || settingsVisuallyOpen
+                    || dashboardIsOpen
+                    || dashboardVisuallyOpen
                     || powerMenu.visuallyOpen
                     || notificationCenter.visuallyOpen
                     || notificationToast.visible
@@ -167,6 +187,16 @@ ShellRoot {
                         && screenRoot.launcherIsOpen
                         && screenRoot.launcherPanel.width >= screenRoot.launcherPanel.finalWidth * screenRoot.launcherPanel.tendrilActivationFraction
                         && screenRoot.launcherPanel.height >= screenRoot.launcherPanel.finalHeight * screenRoot.launcherPanel.tendrilActivationFraction
+                }
+
+                TendrilManager {
+                    id: dashboardTendrilManager
+                    panel: dashboardPanel
+                    screenWidth: screenRoot.width
+                    screenHeight: screenRoot.height
+                    enabled: dashboardPanel.visuallyOpen
+                        && dashboardPanel.width >= dashboardPanel.finalWidth * dashboardPanel.tendrilActivationFraction
+                        && dashboardPanel.height >= dashboardPanel.finalHeight * dashboardPanel.tendrilActivationFraction
                 }
 
                 TendrilManager {
@@ -253,12 +283,21 @@ ShellRoot {
                 mask: Region {
                     id: rootMask
 
-                    // Launcher/settings
+                    // Modal/full-screen transient surfaces. Dashboard does not
+                    // belong here because it must not eat unrelated desktop clicks.
                     Region {
                         x: 0
                         y: 0
-                        width: screenRoot.peripheralSuppressed ? screenRoot.width : 0
-                        height: screenRoot.peripheralSuppressed ? screenRoot.height : 0
+                        width: screenRoot.fullScreenInteractionActive ? screenRoot.width : 0
+                        height: screenRoot.fullScreenInteractionActive ? screenRoot.height : 0
+                    }
+
+                    Region {
+                        item: dashboardHotZone.enabled ? dashboardHotZone : null
+                    }
+
+                    Region {
+                        item: dashboardPanel.visuallyOpen ? dashboardPanel : null
                     }
 
                     // Keep the hot zone in the mask even while unavailable so
@@ -280,7 +319,7 @@ ShellRoot {
                         item: notificationToast.shown ? notificationToast : null
                     }
                     Region {
-                        item: notificationHotZone
+                        item: notificationHotZone.enabled ? notificationHotZone : null
                     }
 
                     // Clock
@@ -374,6 +413,18 @@ ShellRoot {
                     launcherWaistSmoothing: screenRoot.activeCenterPanel
                         ? screenRoot.activeCenterPanel.tendrilWaistSmoothingOverride
                         : 0
+
+                    dashboardX: dashboardPanel.x
+                    dashboardY: dashboardPanel.y
+                    dashboardWidth: dashboardPanel.visuallyOpen ? dashboardPanel.width : 0
+                    dashboardHeight: dashboardPanel.visuallyOpen ? dashboardPanel.height : 0
+                    dashboardRounding: dashboardPanel.cornerRounding
+                    dashboardSlots: dashboardTendrilManager.slots
+                    dashboardTendrilBlend: Qt.vector2d(
+                        dashboardPanel.tendrilBlendRadiusRootOverride,
+                        dashboardPanel.tendrilBlendRadiusPanelOverride
+                    )
+                    dashboardWaistSmoothing: dashboardPanel.tendrilWaistSmoothingOverride
 
                     clockX: clockPanel.x
                     clockY: clockPanel.y
@@ -476,6 +527,12 @@ ShellRoot {
                     onActivated: NotificationController.close()
                 }
 
+                Shortcut {
+                    sequence: "Escape"
+                    enabled: dashboardPanel.isOpen
+                    onActivated: DashboardController.close()
+                }
+
                 // -------------------------------------------------------------
                 // Foreground widgets
                 // -------------------------------------------------------------
@@ -552,6 +609,13 @@ ShellRoot {
                     }
                 }
 
+                Dashboard {
+                    id: dashboardPanel
+                    targetScreen: screenScope.modelData
+                    screenWidth: screenRoot.width
+                    screenHeight: screenRoot.height
+                }
+
                 WorkspaceIndicator {
                     id: workspaceIndicator
                     anchors.fill: parent
@@ -589,6 +653,25 @@ ShellRoot {
                         console.log("[shell] power trigger open requested",
                                     "monitor=", screenScope.modelData.name,
                                     "controllerScreen=", PowerMenuController.activeScreen)
+                    }
+                }
+
+                Item {
+                    id: dashboardHotZone
+                    z: 32
+                    anchors.top: parent.top
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    width: Math.min(300, screenRoot.width)
+                    height: Math.max(5, Theme.borderThickness / 2)
+                    enabled: !screenRoot.fullScreenInteractionActive || dashboardPanel.isOpen
+
+                    HoverHandler {
+                        enabled: dashboardHotZone.enabled
+                        blocking: false
+                        onHoveredChanged: {
+                            dashboardPanel.edgeHovered = hovered
+                            if (hovered) dashboardPanel.summon()
+                        }
                     }
                 }
 
@@ -761,4 +844,3 @@ ShellRoot {
         }
     }
 }
-

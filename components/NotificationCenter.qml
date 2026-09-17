@@ -595,10 +595,10 @@ Item {
                 enabled:
                     NotificationController.count > 0
 
-                onClicked:
-                    NotificationController.clearAll()
+                onClicked: {
+                    NotificationController.clearAllAndClose()
+                }
             }
         }
     }
 }
-

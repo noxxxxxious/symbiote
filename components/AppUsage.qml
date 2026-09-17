@@ -18,10 +18,35 @@ FileView {
 
     printErrors: false
 
-    watchChanges: true
-    onFileChanged: reload()
+    // App usage is low-value recovery data; direct writes are preferable here
+    // to creating app_usage.json.XXXXXX siblings on every launcher update.
+    atomicWrites: false
 
-    onAdapterUpdated: writeAdapter()
+    property bool internalWriteWindow: false
+
+    watchChanges: true
+    onFileChanged: {
+        if (!root.internalWriteWindow)
+            reload()
+    }
+
+    property Timer internalWriteGuard: Timer {
+        interval: 400
+        repeat: false
+        onTriggered: root.internalWriteWindow = false
+    }
+
+    property Timer saveDebounce: Timer {
+        interval: 120
+        repeat: false
+        onTriggered: {
+            root.internalWriteWindow = true
+            root.writeAdapter()
+            internalWriteGuard.restart()
+        }
+    }
+
+    onAdapterUpdated: saveDebounce.restart()
 
     property alias sAdapter: usageAdapter
 

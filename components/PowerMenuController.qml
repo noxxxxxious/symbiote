@@ -14,6 +14,7 @@ QtObject {
         LauncherController.close()
         SettingsController.close()
         NotificationController.close()
+        DashboardController.close()
         activeScreen = screen.name
     }
     function close() {
