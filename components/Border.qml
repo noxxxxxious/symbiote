@@ -228,29 +228,131 @@ ShaderEffect {
 
     function visibleSlots() {
         var list = [];
+
         function collect(source, profile) {
             for (var i = 0; i < source.length; ++i) {
                 var slot = source[i];
-                if (slot && slot.activation > 0.001) list.push({slot: slot, profile: profile});
+
+                if (slot && slot.activation > 0.001) {
+                    list.push({
+                        slot: slot,
+                        profile: profile
+                    });
+                }
             }
         }
 
         var power = [];
         var pSrc = powerSlots || [];
-        for (var p = 0; p < pSrc.length; ++p)
-            if (pSrc[p] && pSrc[p].activation > 0.001)
-                power.push({slot: pSrc[p], profile: Qt.vector4d(40, 24, 60, 0)});
-        collect(launcherSlots || [], Qt.vector4d(launcherTendrilBlend.x, launcherTendrilBlend.y, launcherWaistSmoothing, 0));
-        collect(clockSlots || [], Qt.vector4d(clockTendrilBlend.x, clockTendrilBlend.y, clockWaistSmoothing, 0));
-        collect(traySlots || [], Qt.vector4d(trayTendrilBlend.x, trayTendrilBlend.y, trayWaistSmoothing, 0));
-        collect(trayMenuSlots || [], Qt.vector4d(trayMenuTendrilBlend.x, trayMenuTendrilBlend.y, trayMenuWaistSmoothing, 0));
-        collect(notificationCenterSlots || [], Qt.vector4d(24, 18, 42, 0));
-        collect(notificationToastSlots || [], Qt.vector4d(14, 10, 26, 0));
-        collect(workspaceSlots || [], Qt.vector4d(workspaceTendrilBlend.x, workspaceTendrilBlend.y, workspaceWaistSmoothing, 0));
-        if (!list.length && !power.length)
-            collect(tendrilSlots || [], Qt.vector4d(launcherTendrilBlend.x, launcherTendrilBlend.y, launcherWaistSmoothing, 0));
-        list.sort(function(a, b) { return b.slot.activation - a.slot.activation; });
-        power.sort(function(a, b) { return b.slot.activation - a.slot.activation; });
+
+        for (var p = 0; p < pSrc.length; ++p) {
+            if (pSrc[p] && pSrc[p].activation > 0.001) {
+                power.push({
+                    slot: pSrc[p],
+                    profile: Qt.vector4d(40, 24, 60, 0)
+                });
+            }
+        }
+
+        collect(
+            launcherSlots || [],
+            Qt.vector4d(
+                launcherTendrilBlend.x,
+                launcherTendrilBlend.y,
+                launcherWaistSmoothing,
+                0
+            )
+        );
+
+        collect(
+            clockSlots || [],
+            Qt.vector4d(
+                clockTendrilBlend.x,
+                clockTendrilBlend.y,
+                clockWaistSmoothing,
+                0
+            )
+        );
+
+        collect(
+            traySlots || [],
+            Qt.vector4d(
+                trayTendrilBlend.x,
+                trayTendrilBlend.y,
+                trayWaistSmoothing,
+                0
+            )
+        );
+
+        collect(
+            trayMenuSlots || [],
+            Qt.vector4d(
+                trayMenuTendrilBlend.x,
+                trayMenuTendrilBlend.y,
+                trayMenuWaistSmoothing,
+                0
+            )
+        );
+
+        collect(
+            notificationCenterSlots || [],
+            Qt.vector4d(24, 18, 42, 0)
+        );
+
+        collect(
+            notificationToastSlots || [],
+            Qt.vector4d(14, 10, 26, 0)
+        );
+
+        collect(
+            workspaceSlots || [],
+            Qt.vector4d(
+                workspaceTendrilBlend.x,
+                workspaceTendrilBlend.y,
+                workspaceWaistSmoothing,
+                0
+            )
+        );
+
+        if (!list.length && !power.length) {
+            collect(
+                tendrilSlots || [],
+                Qt.vector4d(
+                    launcherTendrilBlend.x,
+                    launcherTendrilBlend.y,
+                    launcherWaistSmoothing,
+                    0
+                )
+            );
+        }
+
+        function activationSort(a, b) {
+            return b.slot.activation - a.slot.activation;
+        }
+
+        list.sort(activationSort);
+        power.sort(activationSort);
+
+        /*
+         * Normally power tendrils retain their existing priority.
+         *
+         * During a power -> launcher/settings handoff, however, both organisms
+         * coexist briefly. Treat them as one pool ordered by activation so
+         * incoming tendrils can progressively replace retracting power tendrils
+         * instead of remaining invisible until every power tendril is gone.
+         */
+        var centerPanelVisible =
+            launcherWidth > 5
+            && launcherHeight > 5;
+
+        if (centerPanelVisible && power.length > 0) {
+            var handoff = power.concat(list);
+
+            handoff.sort(activationSort);
+
+            return handoff.slice(0, renderCapacity);
+        }
+
         return power.concat(list).slice(0, renderCapacity);
     }
 
