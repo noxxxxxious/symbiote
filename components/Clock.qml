@@ -39,7 +39,6 @@ Item {
     readonly property vector4d cornerRadii: Qt.vector4d(radiusTL, radiusTR, radiusBR, radiusBL)
 
     // Dominant scalar rounding for TendrilManager perimeter calculations
-    property bool tendrilStaticGeometry: true
     readonly property real panelCornerRounding: cornerRounding
 
     // Hover / Retraction state (driven from shell.qml)
@@ -117,6 +116,8 @@ Item {
     // -------------------------------------------------------------------------
     property real tendrilsPer100px: 3
     property int tendrilMaxActive: 10
+    // 10 normal + up to 24 configured cross-reach tendrils + headroom.
+    property int tendrilSlotCapacityOverride: 40
     property vector2d tendrilMaxLengthRangeOverride: Qt.vector2d(20, 30)
     property vector2d tendrilRootThicknessRangeOverride: Qt.vector2d(1, 1)
     property vector2d tendrilWaistThicknessRangeOverride: Qt.vector2d(1, 1)
@@ -317,3 +318,4 @@ Item {
         }
     }
 }
+

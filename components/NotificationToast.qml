@@ -50,6 +50,12 @@ Item {
 
     property real tendrilsPer100px: Config.sAdapter.notifications.toastTendrilsPer100px
     property int tendrilMaxActive: Config.sAdapter.notifications.toastTendrils ? Config.sAdapter.notifications.toastTendrilMaxActive : 0
+    property int tendrilExtraCount: Math.max(0, Config.sAdapter.notifications.toastExtraTendrilCount)
+    property real tendrilExtraReach: Config.sAdapter.notifications.toastExtraTendrilReach
+    property real tendrilExtraRootSpread: Config.sAdapter.notifications.toastExtraTendrilRootSpread
+    property real tendrilExtraPanelSpread: Config.sAdapter.notifications.toastExtraTendrilPanelSpread
+    // Settings allow 24 normal + 24 extra links; retain headroom without a 200-slot pool.
+    property int tendrilSlotCapacityOverride: 56
     property vector2d tendrilMaxLengthRangeOverride: Qt.vector2d(55, 130)
     property vector2d tendrilRootThicknessRangeOverride: Qt.vector2d(3, 6)
     property vector2d tendrilWaistThicknessRangeOverride: Qt.vector2d(1, 2)
@@ -77,10 +83,10 @@ Item {
 
     function extraTendrilSpecs() {
         var specs = []
-        var count = Math.max(0, Config.sAdapter.notifications.toastExtraTendrilCount)
-        var reach = Config.sAdapter.notifications.toastExtraTendrilReach
-        var rootSpread = Config.sAdapter.notifications.toastExtraTendrilRootSpread
-        var panelSpread = Config.sAdapter.notifications.toastExtraTendrilPanelSpread
+        var count = root.tendrilExtraCount
+        var reach = root.tendrilExtraReach
+        var rootSpread = root.tendrilExtraRootSpread
+        var panelSpread = root.tendrilExtraPanelSpread
         var inset = Theme.borderThickness
 
         function fractionAt(index) {
@@ -263,3 +269,4 @@ Item {
         }
     }
 }
+

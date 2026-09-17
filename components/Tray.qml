@@ -190,6 +190,8 @@ Item {
 
     property real tendrilsPer100px: 3
     property int tendrilMaxActive: 10
+    // 10 normal + up to 24 configured cross-reach tendrils + headroom.
+    property int tendrilSlotCapacityOverride: 40
 
     property vector2d tendrilMaxLengthRangeOverride:
         Qt.vector2d(60, 100)
@@ -459,6 +461,8 @@ Item {
         // Ordinary local menu tendrils.
         property real tendrilsPer100px: 1.4
         property int tendrilMaxActive: 7
+        // 7 normal + up to 16 configured menu cross-links + headroom.
+        property int tendrilSlotCapacityOverride: 28
         property vector2d tendrilMaxLengthRangeOverride: Qt.vector2d(90, 180)
         property vector2d tendrilRootThicknessRangeOverride: Qt.vector2d(2, 4)
         property vector2d tendrilWaistThicknessRangeOverride: Qt.vector2d(1, 2)
@@ -813,3 +817,4 @@ Item {
         }
     }
 }
+

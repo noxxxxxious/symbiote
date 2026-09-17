@@ -48,8 +48,63 @@ ShellRoot {
                 readonly property bool isScreenFullscreen:
                     HyprState.isFullscreen(screenScope.modelData)
 
+                // Launcher and Settings are the two largest transient trees. Keep
+                // only the active screen's instance resident, plus a short grace
+                // period after close so their size/tendril animations finish.
+                readonly property bool launcherIsOpen:
+                    LauncherController.isOpenOn(screenScope.modelData)
+                readonly property bool settingsIsOpen:
+                    SettingsController.isOpenOn(screenScope.modelData)
+
+                property bool launcherResident: false
+                property bool settingsResident: false
+
+                readonly property var launcherPanel:
+                    launcherLoader.item ? launcherLoader.item.panel : null
+                readonly property var settingsPanel:
+                    settingsLoader.item ? settingsLoader.item.panel : null
+
                 readonly property bool launcherVisuallyOpen:
-                    launcherPanel.width > 5 || launcherPanel.height > 5
+                    launcherPanel ? (launcherPanel.width > 5 || launcherPanel.height > 5) : false
+                readonly property bool settingsVisuallyOpen:
+                    settingsPanel ? settingsPanel.visuallyOpen : false
+
+                onLauncherIsOpenChanged: {
+                    if (launcherIsOpen) {
+                        launcherUnloadTimer.stop()
+                        launcherResident = true
+                    } else if (launcherResident) {
+                        launcherUnloadTimer.restart()
+                    }
+                }
+
+                onSettingsIsOpenChanged: {
+                    if (settingsIsOpen) {
+                        settingsUnloadTimer.stop()
+                        settingsResident = true
+                    } else if (settingsResident) {
+                        settingsUnloadTimer.restart()
+                    }
+                }
+
+                Component.onCompleted: {
+                    launcherResident = launcherIsOpen
+                    settingsResident = settingsIsOpen
+                }
+
+                Timer {
+                    id: launcherUnloadTimer
+                    interval: 2400
+                    repeat: false
+                    onTriggered: if (!screenRoot.launcherIsOpen) screenRoot.launcherResident = false
+                }
+
+                Timer {
+                    id: settingsUnloadTimer
+                    interval: 2400
+                    repeat: false
+                    onTriggered: if (!screenRoot.settingsIsOpen) screenRoot.settingsResident = false
+                }
 
                 readonly property bool settingsHasActiveTendrils: {
                     const slots = settingsTendrilManager.slots
@@ -63,28 +118,30 @@ ShellRoot {
                 }
 
                 readonly property bool isSettingsActive:
-                    (settingsPanel.visuallyOpen || settingsHasActiveTendrils)
-                    && !launcherPanel.isOpen
+                    (settingsVisuallyOpen || settingsHasActiveTendrils)
+                    && !launcherIsOpen
 
                 readonly property var activeCenterPanel:
                     isSettingsActive ? settingsPanel : launcherPanel
 
                 readonly property bool peripheralSuppressed:
-                    launcherVisuallyOpen || settingsPanel.isOpen
+                    launcherIsOpen || launcherVisuallyOpen || settingsIsOpen || settingsVisuallyOpen
                     || powerMenu.visuallyOpen || notificationCenter.isOpen
 
                 visible:
-                    launcherPanel.isOpen
-                    || settingsPanel.visuallyOpen
+                    launcherIsOpen
+                    || launcherVisuallyOpen
+                    || settingsIsOpen
+                    || settingsVisuallyOpen
                     || powerMenu.visuallyOpen
                     || notificationCenter.visuallyOpen
                     || notificationToast.visible
                     || !isScreenFullscreen
 
-                focusable: launcherPanel.isOpen || settingsPanel.isOpen || powerMenu.isOpen || notificationCenter.isOpen
+                focusable: launcherIsOpen || settingsIsOpen || powerMenu.isOpen || notificationCenter.isOpen
 
                 HyprlandFocusGrab {
-                    active: launcherPanel.isOpen || settingsPanel.isOpen || powerMenu.isOpen || notificationCenter.isOpen
+                    active: screenRoot.launcherIsOpen || screenRoot.settingsIsOpen || powerMenu.isOpen || notificationCenter.isOpen
                     windows: [screenRoot]
 
                     onCleared: {
@@ -103,12 +160,13 @@ ShellRoot {
 
                 TendrilManager {
                     id: tendrilManager
-                    panel: launcherPanel
+                    panel: screenRoot.launcherPanel
                     screenWidth: screenRoot.width
                     screenHeight: screenRoot.height
-                    enabled: launcherPanel.isOpen
-                        && launcherPanel.width >= launcherPanel.finalWidth * launcherPanel.tendrilActivationFraction
-                        && launcherPanel.height >= launcherPanel.finalHeight * launcherPanel.tendrilActivationFraction
+                    enabled: !!screenRoot.launcherPanel
+                        && screenRoot.launcherIsOpen
+                        && screenRoot.launcherPanel.width >= screenRoot.launcherPanel.finalWidth * screenRoot.launcherPanel.tendrilActivationFraction
+                        && screenRoot.launcherPanel.height >= screenRoot.launcherPanel.finalHeight * screenRoot.launcherPanel.tendrilActivationFraction
                 }
 
                 TendrilManager {
@@ -137,12 +195,13 @@ ShellRoot {
 
                 TendrilManager {
                     id: settingsTendrilManager
-                    panel: settingsPanel
+                    panel: screenRoot.settingsPanel
                     screenWidth: screenRoot.width
                     screenHeight: screenRoot.height
-                    enabled: settingsPanel.isOpen
-                        && settingsPanel.width >= settingsPanel.finalWidth * settingsPanel.tendrilActivationFraction
-                        && settingsPanel.height >= settingsPanel.finalHeight * settingsPanel.tendrilActivationFraction
+                    enabled: !!screenRoot.settingsPanel
+                        && screenRoot.settingsIsOpen
+                        && screenRoot.settingsPanel.width >= screenRoot.settingsPanel.finalWidth * screenRoot.settingsPanel.tendrilActivationFraction
+                        && screenRoot.settingsPanel.height >= screenRoot.settingsPanel.finalHeight * screenRoot.settingsPanel.tendrilActivationFraction
                 }
 
                 TendrilManager {
@@ -286,28 +345,35 @@ ShellRoot {
                     powerRect4: powerMenu.panelRect(4)
                     powerSlots: powerMenu.slots
 
-                    launcherX: (screenRoot.launcherVisuallyOpen || screenRoot.isSettingsActive)
+                    launcherX: screenRoot.activeCenterPanel
                         ? screenRoot.activeCenterPanel.x : -100000
-                    launcherY: (screenRoot.launcherVisuallyOpen || screenRoot.isSettingsActive)
+                    launcherY: screenRoot.activeCenterPanel
                         ? screenRoot.activeCenterPanel.y : -100000
-                    launcherWidth: screenRoot.launcherVisuallyOpen
-                        ? launcherPanel.width
-                        : screenRoot.isSettingsActive ? settingsPanel.width : 0
-                    launcherHeight: screenRoot.launcherVisuallyOpen
-                        ? launcherPanel.height
-                        : screenRoot.isSettingsActive ? settingsPanel.height : 0
+                    launcherWidth: screenRoot.launcherVisuallyOpen && screenRoot.launcherPanel
+                        ? screenRoot.launcherPanel.width
+                        : (screenRoot.isSettingsActive && screenRoot.settingsPanel
+                           ? screenRoot.settingsPanel.width : 0)
+                    launcherHeight: screenRoot.launcherVisuallyOpen && screenRoot.launcherPanel
+                        ? screenRoot.launcherPanel.height
+                        : (screenRoot.isSettingsActive && screenRoot.settingsPanel
+                           ? screenRoot.settingsPanel.height : 0)
                     launcherSpikeSharpness: spikeSharpness(screenRoot.isSettingsActive ? Config.sAdapter.settingsPanel : Config.sAdapter.launcher)
                     launcherSpikes: spikeProfile(screenRoot.isSettingsActive ? Config.sAdapter.settingsPanel : Config.sAdapter.launcher)
-                    launcherRounding: screenRoot.activeCenterPanel.cornerRounding
+                    launcherRounding: screenRoot.activeCenterPanel
+                        ? screenRoot.activeCenterPanel.cornerRounding
+                        : Theme.borderRounding
                     launcherSlots: screenRoot.isSettingsActive
                         ? settingsTendrilManager.slots
                         : tendrilManager.slots
-                    launcherTendrilBlend: Qt.vector2d(
-                        screenRoot.activeCenterPanel.tendrilBlendRadiusRootOverride,
-                        screenRoot.activeCenterPanel.tendrilBlendRadiusPanelOverride
-                    )
-                    launcherWaistSmoothing:
-                        screenRoot.activeCenterPanel.tendrilWaistSmoothingOverride
+                    launcherTendrilBlend: screenRoot.activeCenterPanel
+                        ? Qt.vector2d(
+                            screenRoot.activeCenterPanel.tendrilBlendRadiusRootOverride,
+                            screenRoot.activeCenterPanel.tendrilBlendRadiusPanelOverride
+                          )
+                        : Qt.vector2d(0, 0)
+                    launcherWaistSmoothing: screenRoot.activeCenterPanel
+                        ? screenRoot.activeCenterPanel.tendrilWaistSmoothingOverride
+                        : 0
 
                     clockX: clockPanel.x
                     clockY: clockPanel.y
@@ -388,13 +454,13 @@ ShellRoot {
 
                 MouseArea {
                     anchors.fill: parent
-                    enabled: launcherPanel.isOpen
+                    enabled: screenRoot.launcherIsOpen
                     onClicked: LauncherController.close()
                 }
 
                 MouseArea {
                     anchors.fill: parent
-                    enabled: settingsPanel.isOpen && !launcherPanel.isOpen
+                    enabled: screenRoot.settingsIsOpen && !screenRoot.launcherIsOpen
                     onClicked: SettingsController.close()
                 }
 
@@ -452,15 +518,38 @@ ShellRoot {
                     screenHeight: screenRoot.height
                 }
 
-                Launcher {
-                    id: launcherPanel
-                    targetScreen: screenScope.modelData
+                Loader {
+                    id: launcherLoader
+                    anchors.fill: parent
+                    active: screenRoot.launcherResident
+
+                    sourceComponent: Component {
+                        Item {
+                            property alias panel: launcherPanelItem
+
+                            Launcher {
+                                id: launcherPanelItem
+                                targetScreen: screenScope.modelData
+                            }
+                        }
+                    }
                 }
 
-                Settings {
-                    id: settingsPanel
-                    anchors.centerIn: parent
-                    targetScreen: screenScope.modelData
+                Loader {
+                    id: settingsLoader
+                    anchors.fill: parent
+                    active: screenRoot.settingsResident
+
+                    sourceComponent: Component {
+                        Item {
+                            property alias panel: settingsPanelItem
+
+                            Settings {
+                                id: settingsPanelItem
+                                targetScreen: screenScope.modelData
+                            }
+                        }
+                    }
                 }
 
                 WorkspaceIndicator {
@@ -672,3 +761,4 @@ ShellRoot {
         }
     }
 }
+

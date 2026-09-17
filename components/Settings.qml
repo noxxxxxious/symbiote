@@ -13,6 +13,8 @@ Item {
 
     required property var targetScreen
     readonly property bool isOpen: SettingsController.isOpenOn(targetScreen)
+    // See Launcher.qml: preserve the opening animation even when instantiated on demand.
+    property bool presented: false
 
     property real finalWidth: 780
     property real finalHeight: 520
@@ -21,6 +23,7 @@ Item {
     // Match Launcher's exact tendril shrink speed
     property real tendrilsPer100px: 1
     property int tendrilMaxActive: 32
+    property int tendrilSlotCapacityOverride: 40
     property vector2d tendrilMaxLengthRangeOverride: Qt.vector2d(400, 800)
     property vector2d tendrilRootThicknessRangeOverride: Qt.vector2d(10, 24)
     property vector2d tendrilWaistThicknessRangeOverride: Qt.vector2d(2, 4)
@@ -46,8 +49,8 @@ Item {
     anchors.centerIn: parent
     clip: true
 
-    width: isOpen ? finalWidth : 1
-    height: isOpen ? finalHeight : 1
+    width: presented ? finalWidth : 1
+    height: presented ? finalHeight : 1
 
     readonly property bool visuallyOpen: width > 5 || height > 5
     visible: visuallyOpen
@@ -183,16 +186,33 @@ Item {
         }
     }
 
-    onIsOpenChanged: {
+    function presentCurrentState() {
+        presented = isOpen
         if (isOpen) {
-            searchBox.text = "";
-            root.searchQuery = "";
-            root.scanWallpapers();
+            searchBox.text = ""
+            root.searchQuery = ""
+            root.scanWallpapers()
             Qt.callLater(function() {
-                searchBox.forceActiveFocus();
-            });
+                if (root.isOpen)
+                    searchBox.forceActiveFocus()
+            })
         }
     }
+
+    Component.onCompleted: {
+        if (isOpen) {
+            searchBox.text = ""
+            root.searchQuery = ""
+            root.scanWallpapers()
+        }
+        Qt.callLater(function() {
+            root.presented = root.isOpen
+            if (root.isOpen)
+                searchBox.forceActiveFocus()
+        })
+    }
+
+    onIsOpenChanged: presentCurrentState()
 
     // Native Folder Picker Dialog
     Process {
@@ -2424,3 +2444,4 @@ Item {
         }
     }
 }
+

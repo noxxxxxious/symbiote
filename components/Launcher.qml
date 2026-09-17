@@ -13,6 +13,9 @@ Item {
 
     required property var targetScreen
     readonly property bool isOpen: LauncherController.isOpenOn(targetScreen)
+    // A lazy-loaded launcher may be created after the controller is already open.
+    // Keep a separate presentation flag so it still animates from 1px -> full size.
+    property bool presented: false
 
     property real finalWidth: 640
     property real finalHeight: 420
@@ -20,6 +23,7 @@ Item {
 
     property real tendrilsPer100px: 1
     property int tendrilMaxActive: 30
+    property int tendrilSlotCapacityOverride: 40
     property vector2d tendrilMaxLengthRangeOverride: Qt.vector2d(500, 900)
     property vector2d tendrilRootThicknessRangeOverride: Qt.vector2d(15, 40)
     property vector2d tendrilWaistThicknessRangeOverride: Qt.vector2d(3, 5)
@@ -47,8 +51,8 @@ Item {
     anchors.centerIn: parent
     clip: true
 
-    width: isOpen ? finalWidth : 1
-    height: isOpen ? finalHeight : 1
+    width: presented ? finalWidth : 1
+    height: presented ? finalHeight : 1
 
     visible: width > 5 || height > 5
 
@@ -112,17 +116,35 @@ Item {
         LauncherController.close();
     }
 
-    onIsOpenChanged: {
+    function presentCurrentState() {
+        presented = isOpen
         if (isOpen) {
-            searchField.text = "";
-            rebuildList();
+            searchField.text = ""
+            rebuildList()
             // Qt.callLater ensures this runs after the width/height bindings
-            // and visibility have actually taken effect this frame - trying
-            // to forceActiveFocus() in the same tick the item becomes
-            // visible can silently no-op on some platforms.
-            Qt.callLater(function () { searchField.forceActiveFocus(); });
+            // and visibility have actually taken effect this frame.
+            Qt.callLater(function () {
+                if (launcher.isOpen)
+                    searchField.forceActiveFocus()
+            })
         }
     }
+
+    Component.onCompleted: {
+        // The Loader creates us only when needed, so isOpen can already be true.
+        // Defer the first transition by one event turn so Behaviors animate it.
+        if (isOpen) {
+            searchField.text = ""
+            rebuildList()
+        }
+        Qt.callLater(function () {
+            launcher.presented = launcher.isOpen
+            if (launcher.isOpen)
+                searchField.forceActiveFocus()
+        })
+    }
+
+    onIsOpenChanged: presentCurrentState()
 
     Connections {
         target: searchField
@@ -353,3 +375,4 @@ Item {
         }
     }
 }
+

@@ -23,6 +23,7 @@ Item {
     // Tendril profile for this panel
     property real tendrilsPer100px: 2     // horizontal density
     property int tendrilMaxActive: 12        // max simultaneously attached
+    property int tendrilSlotCapacityOverride: 20
     property vector2d tendrilMaxLengthRangeOverride: Qt.vector2d(40, 80)
 
     property int tendrilMaxTop: 8
@@ -49,3 +50,4 @@ Item {
         }
     }
 }
+

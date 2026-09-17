@@ -81,7 +81,9 @@ Item {
         id: liquidDynamicsClock
         interval: 16
         repeat: true
-        running: root.shaderEnabledF && root.shaderEnabledF > 0.5
+        // Do not keep a 60-ish Hz dynamics loop alive while the auto-hidden
+        // workspace organism is not even being drawn by Border.qml.
+        running: root.shaderEnabledF > 0.5 && root.liquidEnabledF > 0.5
 
         onRunningChanged: {
             root.liquidLastTickMs = Date.now()
@@ -372,3 +374,4 @@ Item {
         }
     }
 }
+

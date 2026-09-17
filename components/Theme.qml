@@ -33,7 +33,8 @@ QtObject {
 
     // --- Tendrils ---
 
-    property int tendrilMaxSlots: 200
+    // CPU/RAM fallback pool. Individual panels override this lower where possible.
+    property int tendrilMaxSlots: 64
     property int tendrilRenderCapacity: 64
     property int tendrilMaxPerimeterPoints: 50
 
@@ -117,3 +118,4 @@ QtObject {
         return p.replace(/^~/, Quickshell.env("HOME") || "");
     }
 }
+

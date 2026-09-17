@@ -18,47 +18,121 @@ QtObject {
     property real screenHeight: 0
     property var slots: []
 
-    readonly property int maxSlots: panel.tendrilSlotCapacityOverride ?? Theme.tendrilMaxSlots
+    // Managers used to allocate 200 slots and tick forever while enabled. Keep
+    // the same tendril simulation, but make it event-driven once it settles.
+    readonly property int maxSlots: panel
+        ? (panel.tendrilSlotCapacityOverride ?? Theme.tendrilMaxSlots)
+        : 0
     property bool fading: false
     property bool needsUpdate: true
-    readonly property bool staticGeometry: panel.tendrilStaticGeometry ?? false
+    property bool geometryDirty: true
+
+    // Kept for compatibility with existing panels such as PowerCard. All managers
+    // now sleep when settled; this flag no longer has to opt a panel into sleeping.
+    readonly property bool staticGeometry: panel ? (panel.tendrilStaticGeometry ?? false) : false
+
+    function markDirty() {
+        geometryDirty = true
+        needsUpdate = true
+    }
+
+    // Any geometry/profile change wakes the manager. Unknown handlers are ignored
+    // so one manager can cover every panel type without panel-specific subclasses.
     property Connections geometryChanges: Connections {
         target: manager.panel
         ignoreUnknownSignals: true
-        function onXChanged() { manager.needsUpdate = true; }
-        function onYChanged() { manager.needsUpdate = true; }
-        function onWidthChanged() { manager.needsUpdate = true; }
-        function onHeightChanged() { manager.needsUpdate = true; }
-        function onTendrilExtraCountChanged() { manager.needsUpdate = true; }
+
+        function onXChanged() { manager.markDirty() }
+        function onYChanged() { manager.markDirty() }
+        function onWidthChanged() { manager.markDirty() }
+        function onHeightChanged() { manager.markDirty() }
+        function onPanelCornerRoundingChanged() { manager.markDirty() }
+        function onCornerRoundingChanged() { manager.markDirty() }
+
+        function onTendrilsPer100pxChanged() { manager.markDirty() }
+        function onTendrilMaxActiveChanged() { manager.markDirty() }
+        function onTendrilMaxTopChanged() { manager.markDirty() }
+        function onTendrilMaxRightChanged() { manager.markDirty() }
+        function onTendrilMaxBottomChanged() { manager.markDirty() }
+        function onTendrilMaxLeftChanged() { manager.markDirty() }
+        function onTendrilMaxCornersChanged() { manager.markDirty() }
+        function onTendrilAttachOffsetChanged() { manager.markDirty() }
+        function onTendrilUseScreenRelativeAttachDistanceChanged() { manager.markDirty() }
+        function onTendrilMaxLengthRangeOverrideChanged() { manager.markDirty() }
+        function onTendrilRootThicknessRangeOverrideChanged() { manager.markDirty() }
+        function onTendrilWaistThicknessRangeOverrideChanged() { manager.markDirty() }
+        function onTendrilPanelThicknessRangeOverrideChanged() { manager.markDirty() }
+        function onTendrilGrowSpeedOverrideChanged() { manager.markDirty() }
+        function onTendrilShrinkSpeedOverrideChanged() { manager.markDirty() }
+
+        function onTendrilExtraConnectionsChanged() { manager.markDirty() }
+        function onTendrilExtraCountChanged() { manager.markDirty() }
+        function onTendrilExtraReachChanged() { manager.markDirty() }
+        function onTendrilExtraRootSpreadChanged() { manager.markDirty() }
+        function onTendrilExtraPanelSpreadChanged() { manager.markDirty() }
+        function onTendrilExtraTipSpreadChanged() { manager.markDirty() }
+        function onTendrilExtraVerticalCountChanged() { manager.markDirty() }
+        function onTendrilExtraHorizontalCountChanged() { manager.markDirty() }
+        function onTendrilExtraVerticalReachChanged() { manager.markDirty() }
+        function onTendrilExtraHorizontalReachChanged() { manager.markDirty() }
+        function onTendrilExtraVerticalReachSpreadChanged() { manager.markDirty() }
+        function onTendrilExtraHorizontalReachSpreadChanged() { manager.markDirty() }
+        function onTendrilExtraVerticalTipSpreadChanged() { manager.markDirty() }
+        function onTendrilExtraHorizontalTipSpreadChanged() { manager.markDirty() }
+        function onTendrilExtraMaxLengthRangeOverrideChanged() { manager.markDirty() }
+        function onTendrilExtraRootThicknessRangeOverrideChanged() { manager.markDirty() }
+        function onTendrilExtraWaistThicknessRangeOverrideChanged() { manager.markDirty() }
+        function onTendrilExtraPanelThicknessRangeOverrideChanged() { manager.markDirty() }
+        function onTendrilExtraGrowSpeedOverrideChanged() { manager.markDirty() }
+        function onTendrilExtraShrinkSpeedOverrideChanged() { manager.markDirty() }
     }
-    onScreenWidthChanged: needsUpdate = true
-    onScreenHeightChanged: needsUpdate = true
+
+    property Connections themeChanges: Connections {
+        target: Theme
+        function onBorderThicknessChanged() { manager.markDirty() }
+        function onBorderRoundingChanged() { manager.markDirty() }
+        function onTendrilsPer100pxChanged() { manager.markDirty() }
+        function onTendrilMaxLengthRangeChanged() { manager.markDirty() }
+        function onTendrilRootThicknessRangeChanged() { manager.markDirty() }
+        function onTendrilWaistThicknessRangeChanged() { manager.markDirty() }
+        function onTendrilPanelThicknessRangeChanged() { manager.markDirty() }
+        function onTendrilAttachDistanceChanged() { manager.markDirty() }
+        function onTendrilGrowSpeedChanged() { manager.markDirty() }
+        function onTendrilShrinkSpeedChanged() { manager.markDirty() }
+        function onTendrilJitterChanged() { manager.markDirty() }
+    }
+
+    onScreenWidthChanged: markDirty()
+    onScreenHeightChanged: markDirty()
+
     readonly property int maxActive:
-        panel.tendrilMaxActive !== undefined && panel.tendrilMaxActive > 0
+        panel && panel.tendrilMaxActive !== undefined && panel.tendrilMaxActive > 0
         ? panel.tendrilMaxActive
         : Theme.tendrilMaxActivePerPanel
 
     readonly property real panelCornerRounding:
-        panel.panelCornerRounding !== undefined
-        ? panel.panelCornerRounding
-        : (panel.cornerRounding !== undefined
-           ? panel.cornerRounding
-           : Theme.borderRounding)
+        !panel
+        ? Theme.borderRounding
+        : (panel.panelCornerRounding !== undefined
+           ? panel.panelCornerRounding
+           : (panel.cornerRounding !== undefined
+              ? panel.cornerRounding
+              : Theme.borderRounding))
 
     function panelAlive() {
-        return enabled;
+        return enabled && panel !== null
     }
 
     function growSpeed() {
-        return panel.tendrilGrowSpeedOverride !== undefined
+        return panel && panel.tendrilGrowSpeedOverride !== undefined
             ? panel.tendrilGrowSpeedOverride
-            : Theme.tendrilGrowSpeed;
+            : Theme.tendrilGrowSpeed
     }
 
     function shrinkSpeed() {
-        return panel.tendrilShrinkSpeedOverride !== undefined
+        return panel && panel.tendrilShrinkSpeedOverride !== undefined
             ? panel.tendrilShrinkSpeedOverride
-            : Theme.tendrilShrinkSpeed;
+            : Theme.tendrilShrinkSpeed
     }
 
     function randRange(r) {
@@ -105,19 +179,36 @@ QtObject {
     }
 
     Component.onCompleted: {
-        initSlots();
-        prevEnabled = enabled;
+        initSlots()
+        prevEnabled = enabled
+        markDirty()
+    }
+
+    onPanelChanged: {
+        perimeterPhase = Math.random()
+        initSlots()
+        fading = false
+        prevEnabled = enabled
+        markDirty()
+    }
+
+    onMaxSlotsChanged: {
+        // Capacity changes are rare configuration events; rebuild once rather than
+        // carrying a large dormant pool for the lifetime of the shell.
+        initSlots()
+        markDirty()
     }
 
     onEnabledChanged: {
-        needsUpdate = true;
+        markDirty()
         if (enabled && !prevEnabled) {
-            perimeterPhase = Math.random();
-            initSlots();
+            perimeterPhase = Math.random()
+            initSlots()
         }
 
-        if (!enabled) fading = slots.some(function(slot) { return slot.activation > 0.001; });
-        prevEnabled = enabled;
+        if (!enabled)
+            fading = slots.some(function(slot) { return slot.activation > 0.001 })
+        prevEnabled = enabled
     }
 
     function buildSegments(w, h, r) {
@@ -543,9 +634,22 @@ QtObject {
     }
 
     function tick() {
-        var current = slots || [];
-        var gSpeed = growSpeed();
-        var sSpeed = shrinkSpeed();
+        var current = slots || []
+
+        if (!panel && !fading) {
+            needsUpdate = false
+            geometryDirty = false
+            return
+        }
+
+        // Keep one follow-up tick after the most recent geometry/config change.
+        // This prevents a moving panel from repeatedly stopping/restarting its timer
+        // between animation frames, while still allowing a fully settled panel to sleep.
+        var consumedDirty = geometryDirty
+        geometryDirty = false
+
+        var gSpeed = growSpeed()
+        var sSpeed = shrinkSpeed()
 
         if (!panelAlive()) {
             var changed = false;
@@ -571,9 +675,10 @@ QtObject {
                 }
             }
 
-            if (changed) slots = current.concat();
-            fading = stillFading;
-            return;
+            if (changed) slots = current.concat()
+            fading = stillFading
+            needsUpdate = false
+            return
         }
 
         var minX = Theme.borderThickness;
@@ -825,23 +930,35 @@ QtObject {
             ) * extraSpeed;
         }
 
-        if (staticGeometry) {
-            var unsettled = false;
-            for (var st = 0; st < current.length; ++st) {
-                var slot = current[st];
-                if (slot.active && slot.activation >= 0.999) slot.activation = 1;
-                else if (!slot.active && slot.activation <= 0.001) slot.activation = 0;
-                else unsettled = true;
+        // Once every active/inactive slot has reached its target activation and
+        // geometry has gone quiet, there is nothing left to simulate. Clamp the
+        // last tiny exponential tail so the timer can shut down completely.
+        var unsettled = false
+        for (var st = 0; st < current.length; ++st) {
+            var settledSlot = current[st]
+            if (settledSlot.active && settledSlot.activation >= 0.999) {
+                settledSlot.activation = 1
+            } else if (!settledSlot.active && settledSlot.activation <= 0.001) {
+                settledSlot.activation = 0
+                if (settledSlot.isExtra && !settledSlot.active)
+                    settledSlot.isExtra = false
+            } else {
+                unsettled = true
             }
-            needsUpdate = unsettled;
         }
-        slots = current.concat();
+
+        slots = current.concat()
+        fading = false
+        needsUpdate = unsettled || geometryDirty || consumedDirty
     }
 
     property Timer timer: Timer {
-        interval: panel.tendrilUpdateIntervalOverride !== undefined ? panel.tendrilUpdateIntervalOverride : 33
-        running: manager.fading || (manager.enabled && (!manager.staticGeometry || manager.needsUpdate))
+        interval: panel && panel.tendrilUpdateIntervalOverride !== undefined
+            ? panel.tendrilUpdateIntervalOverride
+            : 33
+        running: manager.fading || (manager.panel && manager.enabled && manager.needsUpdate)
         repeat: true
         onTriggered: manager.tick()
     }
 }
+

@@ -146,6 +146,12 @@ Item {
 
     property real tendrilsPer100px: 1.2
     property int tendrilMaxActive: 12
+    property int tendrilExtraCount: Math.max(0, Config.sAdapter.notifications.centerExtraTendrilCount)
+    property real tendrilExtraReach: Config.sAdapter.notifications.centerExtraTendrilReach
+    property real tendrilExtraRootSpread: Config.sAdapter.notifications.centerExtraTendrilRootSpread
+    property real tendrilExtraTipSpread: Config.sAdapter.notifications.centerExtraTendrilTipSpread
+    // 12 normal + up to 24 configured extra links + headroom.
+    property int tendrilSlotCapacityOverride: 40
 
     property vector2d tendrilMaxLengthRangeOverride:
         Qt.vector2d(100, 280)
@@ -212,10 +218,7 @@ Item {
     function extraTendrilSpecs() {
         var specs = []
 
-        var count = Math.max(
-            0,
-            Config.sAdapter.notifications.centerExtraTendrilCount
-        )
+        var count = root.tendrilExtraCount
 
         var top = Theme.borderThickness
         var bottom = screenHeight - Theme.borderThickness
@@ -230,14 +233,9 @@ Item {
                     ? 0.5
                     : i / (count - 1)
 
-            var rootSpread =
-                Config.sAdapter.notifications.centerExtraTendrilRootSpread
-
-            var tipSpread =
-                Config.sAdapter.notifications.centerExtraTendrilTipSpread
-
-            var reach =
-                Config.sAdapter.notifications.centerExtraTendrilReach
+            var rootSpread = root.tendrilExtraRootSpread
+            var tipSpread = root.tendrilExtraTipSpread
+            var reach = root.tendrilExtraReach
 
             var rootX =
                 innerX
@@ -603,3 +601,4 @@ Item {
         }
     }
 }
+

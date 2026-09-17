@@ -26,7 +26,9 @@ PanelWindow {
         source: Theme.wallpaperPath !== "" ? (Theme.wallpaperPath.startsWith("/") ? "file://" + Theme.wallpaperPath : Theme.wallpaperPath) : ""
         fillMode: Image.PreserveAspectCrop
         asynchronous: true
-        cache: false
+        // All screens normally use the same source. Let Qt share the decoded pixmap.
+        // Changing source still invalidates/reloads the image normally.
+        cache: true
         clip: true
 
         // Smooth fade when changing wallpapers
@@ -35,3 +37,4 @@ PanelWindow {
         }
     }
 }
+
