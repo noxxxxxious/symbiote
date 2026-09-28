@@ -1,14 +1,22 @@
 {
     "counts": {
-        "com.obsproject.Studio": 8,
-        "gimp": 1,
-        "google-chrome": 6,
+        "btrfs-assistant": 1,
+        "cockos-reaper": 2,
+        "com.obsproject.Studio": 9,
+        "com.spotify.Client": 2,
+        "filezilla": 2,
+        "gimp": 2,
+        "google-chrome": 14,
         "kitty": 7,
-        "obsidian": 2,
-        "org.gnome.gedit": 1,
-        "proton-mail": 2,
-        "teams-for-linux": 8,
-        "vesktop": 7,
-        "zen": 12
+        "obsidian": 6,
+        "org.darktable.darktable": 1,
+        "org.gnome.gedit": 6,
+        "org.pulseaudio.pavucontrol": 1,
+        "proton-mail": 7,
+        "steam": 4,
+        "teams-for-linux": 15,
+        "vesktop": 19,
+        "virtualbox": 3,
+        "zen": 32
     }
 }

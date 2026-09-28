@@ -16,7 +16,13 @@ FileView {
 
     path: Quickshell.shellDir + "/app_usage.json"
 
-    printErrors: false
+    // Load the existing counts before the launcher can record a new launch.
+    // Without this, a fast interaction during asynchronous startup can save
+    // the adapter defaults over the on-disk history.
+    blockLoading: true
+    blockWrites: true
+
+    printErrors: true
 
     // App usage is low-value recovery data; direct writes are preferable here
     // to creating app_usage.json.XXXXXX siblings on every launcher update.
@@ -37,7 +43,7 @@ FileView {
     }
 
     property Timer saveDebounce: Timer {
-        interval: 120
+        interval: 30
         repeat: false
         onTriggered: {
             root.internalWriteWindow = true

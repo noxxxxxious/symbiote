@@ -13,6 +13,9 @@ Item {
     required property real screenHeight
 
     property string mode: Theme.trayMode
+    property bool shortcutSubdermal: false
+    readonly property string effectiveMode:
+        shortcutSubdermal && mode === "parasitic" ? "subdermal" : mode
     property string cornerPosition: Theme.trayCornerPosition
     property string slideDirection: Theme.traySlideDirection
 
@@ -47,6 +50,11 @@ Item {
     property bool pointerInside: false
     property bool popupPointerInside: false
     property int disengageDelay: 3000
+
+    onEffectiveModeChanged: {
+        release()
+        isEvading = false
+    }
 
     property real engagedScale: root.isEngaged ? 1.1 : 1.0
     readonly property real visualScale: engagedScale
@@ -109,7 +117,7 @@ Item {
         root.activeMenuItem = null
         menuList.currentIndex = -1
 
-        if (root.mode === "subdermal") {
+        if (root.effectiveMode === "subdermal") {
             root.isEvading = false
         }
     }
@@ -118,7 +126,7 @@ Item {
         if (root.isEngaged)
             return false
 
-        if (root.mode === "subdermal")
+        if (root.effectiveMode === "subdermal")
             return true
 
         return root.isEvading
@@ -611,7 +619,7 @@ Item {
 
                     if (root.isEngaged) {
                         root.isEvading = false
-                    } else if (root.mode === "parasitic") {
+                    } else if (root.effectiveMode === "parasitic") {
                         console.log("[STATE][Tray] parasitic surface hover -> evade")
                         root.isEvading = true
                     }

@@ -44,10 +44,13 @@ Item {
     // Hover / Retraction state (driven from shell.qml)
     property bool isHovered: false
     property string mode: Config.sAdapter.clock.mode
+    property bool shortcutSubdermal: false
+    readonly property string effectiveMode:
+        shortcutSubdermal && mode === "parasitic" ? "subdermal" : mode
     property bool isEngaged: false
     property bool pointerInside: false
     property bool edgeHovered: false
-    readonly property bool isRetracted: mode === "subdermal" ? !isEngaged : isHovered
+    readonly property bool isRetracted: effectiveMode === "subdermal" ? !isEngaged : isHovered
 
     function summon() {
         isEngaged = true
@@ -61,7 +64,7 @@ Item {
         if (edgeHovered) summon()
         else if (isEngaged && !pointerInside) hideTimer.restart()
     }
-    onModeChanged: {
+    onEffectiveModeChanged: {
         hideTimer.stop()
         isEngaged = false
         isHovered = false
@@ -318,4 +321,3 @@ Item {
         }
     }
 }
-

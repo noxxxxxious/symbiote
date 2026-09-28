@@ -6,6 +6,20 @@ import QtQuick
 import "components"
 
 ShellRoot {
+    id: shellRoot
+    // Temporarily suppress widgets whose configured mode is parasitic. Their
+    // configured modes remain untouched, so toggling back restores only those.
+    property bool parasiticWidgetsSuppressed: false
+
+    GlobalShortcut {
+        appid: "faishell"
+        name: "toggleWidgets"
+        onPressed: {
+          shellRoot.parasiticWidgetsSuppressed = !shellRoot.parasiticWidgetsSuppressed
+          console.log('parasiticswap pressed')
+        }
+    }
+
     GlobalShortcut {
         appid: "faishell"
         name: "toggleLauncher"
@@ -539,6 +553,7 @@ ShellRoot {
 
                 Clock {
                     id: clockPanel
+                    shortcutSubdermal: shellRoot.parasiticWidgetsSuppressed
                     targetScreen: screenScope.modelData
                     screenWidth: screenRoot.width
                     screenHeight: screenRoot.height
@@ -546,6 +561,7 @@ ShellRoot {
 
                 Tray {
                     id: trayPanel
+                    shortcutSubdermal: shellRoot.parasiticWidgetsSuppressed
 
                     // Keep the engaged tray and preview popup above sibling panels.
                     z: (trayPanel.isEngaged || trayPanel.settingsMenuPreviewVisible) ? 10 : 0
@@ -705,7 +721,7 @@ ShellRoot {
                     y: clockPanel.isBottom ? screenRoot.height - height : 0
                     width: clockPanel.finalWidth + clockPanel.margin + Theme.borderThickness
                     height: Math.max(4, Theme.borderThickness / 2)
-                    enabled: clockPanel.mode === "subdermal" && !screenRoot.peripheralSuppressed
+                    enabled: clockPanel.effectiveMode === "subdermal" && !screenRoot.peripheralSuppressed
                     HoverHandler {
                         onHoveredChanged: clockPanel.edgeHovered = hovered
                     }
@@ -713,8 +729,8 @@ ShellRoot {
 
                 Item {
                     id: clockHitbox
-                    x: clockPanel.mode === "subdermal" ? clockPanel.x : clockPanel.restingX
-                    y: clockPanel.mode === "subdermal" ? clockPanel.y : clockPanel.restingY
+                    x: clockPanel.effectiveMode === "subdermal" ? clockPanel.x : clockPanel.restingX
+                    y: clockPanel.effectiveMode === "subdermal" ? clockPanel.y : clockPanel.restingY
                     width: clockPanel.finalWidth
                     height: clockPanel.finalHeight
                     enabled: !clockPanel.isRetracted && !screenRoot.peripheralSuppressed
@@ -724,7 +740,7 @@ ShellRoot {
                             console.log("[HOVER][shell] clockHitbox", hovered,
                                         "enabled=", clockHitbox.enabled,
                                         "geom=", clockHitbox.x, clockHitbox.y, clockHitbox.width, clockHitbox.height)
-                            if (clockPanel.mode === "subdermal")
+                            if (clockPanel.effectiveMode === "subdermal")
                                 clockPanel.pointerInside = hovered
                             else if (hovered && !clockPanel.isHovered)
                                 clockPanel.isHovered = true
@@ -736,12 +752,12 @@ ShellRoot {
                 // Observe the compositor cursor while evading, without reserving
                 // either panel's old footprint in the input mask.
                 readonly property bool clockReturnTracking:
-                    clockPanel.mode === "parasitic"
+                    clockPanel.effectiveMode === "parasitic"
                     && clockPanel.isRetracted
                     && !screenRoot.launcherVisuallyOpen
                     && !screenRoot.peripheralSuppressed
                 readonly property bool trayReturnTracking:
-                    trayPanel.mode === "parasitic"
+                    trayPanel.effectiveMode === "parasitic"
                     && trayPanel.isEvading
                     && !trayPanel.isEngaged
                     && !screenRoot.launcherVisuallyOpen
