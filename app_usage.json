@@ -1,22 +1,25 @@
 {
     "counts": {
+        "avahi-discover": 1,
         "btrfs-assistant": 1,
-        "cockos-reaper": 2,
-        "com.obsproject.Studio": 9,
+        "cockos-reaper": 5,
+        "com.epicgames.UnrealEngineEditor": 5,
+        "com.obsproject.Studio": 15,
         "com.spotify.Client": 2,
-        "filezilla": 2,
-        "gimp": 2,
-        "google-chrome": 14,
+        "filezilla": 3,
+        "gimp": 5,
+        "google-chrome": 23,
         "kitty": 7,
-        "obsidian": 6,
+        "obsidian": 13,
         "org.darktable.darktable": 1,
-        "org.gnome.gedit": 6,
+        "org.gnome.Calculator": 1,
+        "org.gnome.gedit": 7,
         "org.pulseaudio.pavucontrol": 1,
-        "proton-mail": 7,
-        "steam": 4,
-        "teams-for-linux": 15,
-        "vesktop": 19,
+        "proton-mail": 10,
+        "steam": 11,
+        "teams-for-linux": 25,
+        "vesktop": 32,
         "virtualbox": 3,
-        "zen": 32
+        "zen": 57
     }
 }
