@@ -283,7 +283,7 @@ Item {
     }
 
     function maybeScheduleClose() {
-        if (!pointerInside && !edgeHovered && isOpen)
+        if (!pointerInside && !edgeHovered && isOpen && !BluetoothController.pairing && !WifiController.promptNetwork)
             closeTimer.restart()
     }
 
@@ -305,7 +305,7 @@ Item {
         id: closeTimer
         interval: dashboardConfig.closeDelay
         repeat: false
-        onTriggered: if (!root.pointerInside && !root.edgeHovered) DashboardController.close()
+        onTriggered: if (!root.pointerInside && !root.edgeHovered && !BluetoothController.pairing && !WifiController.promptNetwork) DashboardController.close()
     }
 
     HoverHandler {

@@ -48,6 +48,22 @@ ShellRoot {
             DashboardController.toggleOn(Hyprland.focusedMonitor)
     }
 
+    GlobalShortcut {
+        appid: "faishell"
+        name: "volumeUp"
+        onPressed: AudioController.adjustVolume(0.05)
+    }
+    GlobalShortcut {
+        appid: "faishell"
+        name: "volumeDown"
+        onPressed: AudioController.adjustVolume(-0.05)
+    }
+    GlobalShortcut {
+        appid: "faishell"
+        name: "volumeMute"
+        onPressed: AudioController.toggleMute()
+    }
+
     Variants {
         model: Quickshell.screens
 
@@ -172,7 +188,7 @@ ShellRoot {
                     || notificationToast.visible
                     || !isScreenFullscreen
 
-                focusable: launcherIsOpen || settingsIsOpen || powerMenu.isOpen || notificationCenter.isOpen
+                focusable: launcherIsOpen || settingsIsOpen || powerMenu.isOpen || notificationCenter.isOpen || dashboardIsOpen
 
                 HyprlandFocusGrab {
                     active: screenRoot.launcherIsOpen || screenRoot.settingsIsOpen || powerMenu.isOpen || notificationCenter.isOpen
@@ -623,6 +639,12 @@ ShellRoot {
                             }
                         }
                     }
+                }
+
+                AudioOsd {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    anchors.bottom: parent.bottom
+                    anchors.bottomMargin: 80
                 }
 
                 Dashboard {

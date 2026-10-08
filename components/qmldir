@@ -35,3 +35,8 @@ PowerTrigger 1.0 PowerTrigger.qml
 
 singleton WorkspaceController 1.0 WorkspaceController.qml
 WorkspaceIndicator 1.0 WorkspaceIndicator.qml
+singleton AudioController 1.0 AudioController.qml
+singleton BluetoothController 1.0 BluetoothController.qml
+AudioOsd 1.0 AudioOsd.qml
+SettingsSlider 1.0 SettingsSlider.qml
+singleton WifiController 1.0 WifiController.qml

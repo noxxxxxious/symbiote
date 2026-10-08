@@ -2417,7 +2417,7 @@ Item {
             Layout.preferredWidth: 196
             Layout.preferredHeight: 30
 
-            Slider {
+            SettingsSlider {
                 id: numberSlider
                 anchors.left: parent.left
                 anchors.verticalCenter: parent.verticalCenter
@@ -2430,52 +2430,6 @@ Item {
                 value: Number(row.value) || 0
                 hoverEnabled: true
                 onMoved: row.commit(value)
-
-                background: Rectangle {
-                    x: numberSlider.leftPadding
-                    y: numberSlider.topPadding + numberSlider.availableHeight / 2 - height / 2
-                    width: numberSlider.availableWidth
-                    height: 7
-                    radius: 3.5
-                    color: "#181926"
-                    border.color: numberSlider.hovered || numberSlider.pressed ? row.accent(0.6) : "#313244"
-                    border.width: 1
-
-                    Rectangle {
-                        x: 1
-                        y: 1
-                        width: Math.max(0, (parent.width - 2) * numberSlider.visualPosition)
-                        height: parent.height - 2
-                        radius: 2.5
-                        color: Theme.textColorAccent
-                        opacity: numberSlider.pressed ? 1.0 : 0.82
-                        Behavior on width { NumberAnimation { duration: 55 } }
-                    }
-                }
-
-                handle: Rectangle {
-                    id: numberHandle
-                    x: numberSlider.leftPadding + numberSlider.visualPosition * (numberSlider.availableWidth - width)
-                    y: numberSlider.topPadding + numberSlider.availableHeight / 2 - height / 2
-                    implicitWidth: handleHover.hovered || numberSlider.pressed ? 19 : 16
-                    implicitHeight: implicitWidth
-                    radius: width / 2
-                    color: Theme.borderColor
-                    border.color: Theme.textColorAccent
-                    border.width: 2
-
-                    HoverHandler { id: handleHover; blocking: false }
-
-                    Rectangle {
-                        anchors.centerIn: parent
-                        width: 6
-                        height: 6
-                        radius: 3
-                        color: Theme.textColorAccent
-                    }
-
-                    Behavior on implicitWidth { NumberAnimation { duration: 90; easing.type: Easing.OutCubic } }
-                }
             }
 
             TextField {
