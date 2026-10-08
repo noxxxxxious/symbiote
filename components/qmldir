@@ -40,3 +40,4 @@ singleton BluetoothController 1.0 BluetoothController.qml
 AudioOsd 1.0 AudioOsd.qml
 SettingsSlider 1.0 SettingsSlider.qml
 singleton WifiController 1.0 WifiController.qml
+singleton VpnController 1.0 VpnController.qml

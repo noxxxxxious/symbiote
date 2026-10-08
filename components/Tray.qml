@@ -23,9 +23,12 @@ Item {
     property real plateHeight: 44
     property real cornerRounding: 16
 
+    property var vpnController: VpnController
+    readonly property bool hasVpnIndicator: vpnController.connected
+
     readonly property int systemItemCount: SystemTray.items.values.length
     readonly property bool hasNotificationIndicator: NotificationController.count > 0
-    readonly property int itemCount: systemItemCount + (hasNotificationIndicator ? 1 : 0)
+    readonly property int itemCount: systemItemCount + (hasNotificationIndicator ? 1 : 0) + (hasVpnIndicator ? 1 : 0)
 
     readonly property real itemStride:
         Theme.trayIconSize
@@ -340,6 +343,24 @@ Item {
     // the popup instead of every menu being pinned to the same clamp point.
     readonly property real menuIconAnchorBias: root.isRight ? 0.86 : 0.14
 
+    property QtObject vpnMenuItem: QtObject {
+        readonly property string id: "faishell-vpn"
+        readonly property bool hasMenu: root.hasVpnIndicator
+    }
+    readonly property bool vpnPopupVisible: activeMenuItem === vpnMenuItem && hasVpnIndicator
+    readonly property var vpnMenuItems: vpnController.active.filter(connection => connection.state === 2).map(connection => ({
+        text: vpnController.active.length > 1 ? "Disconnect VPN: " + connection.name : "Disconnect VPN",
+        enabled: !vpnController.busy,
+        isSeparator: false,
+        triggered: function() { root.vpnController.disconnectVpn(connection.uuid) }
+    }))
+    onHasVpnIndicatorChanged: {
+        if (!hasVpnIndicator && activeMenuItem === vpnMenuItem) {
+            activeMenuItem = null
+            activeMenuIndex = -1
+        }
+    }
+
     readonly property var activeItem: activeMenuItem
     readonly property bool realPopupVisible: root.isEngaged && !!root.activeMenuItem && root.activeMenuItem.hasMenu
     readonly property bool popupVisible: realPopupVisible || settingsMenuPreviewVisible
@@ -650,6 +671,48 @@ Item {
                 sourceComponent: NotificationIndicator {}
             }
 
+            Loader {
+                active: root.hasVpnIndicator
+                visible: active
+                sourceComponent: MouseArea {
+                    id: vpnIcon
+                    objectName: "vpnTrayIcon"
+                    implicitWidth: Theme.trayIconSize + Theme.trayIconPaddingX * 2
+                    implicitHeight: Theme.trayIconSize + Theme.trayIconPaddingY * 2
+                    acceptedButtons: Qt.LeftButton | Qt.RightButton
+                    hoverEnabled: true
+                    onClicked: {
+                        root.summon()
+                        root.selectMenuForItem(root.vpnMenuItem, -2, vpnIcon)
+                    }
+                    onEntered: if (root.vpnPopupVisible) root.cancelPopupDismissCountdown()
+                    onExited: if (root.vpnPopupVisible) root.beginPopupDismissCountdown()
+                    // Draw the lock directly so it remains visible without an icon theme.
+                    Rectangle {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        y: (parent.height - Theme.trayIconSize) / 2 + 1
+                        width: 11; height: 12
+                        radius: 5
+                        color: "transparent"
+                        border.width: 2
+                        border.color: Theme.textColorAccent
+                    }
+                    Rectangle {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        y: (parent.height - Theme.trayIconSize) / 2 + 9
+                        width: 17; height: 13
+                        radius: 3
+                        color: Theme.textColorAccent
+                        Rectangle {
+                            anchors.centerIn: parent
+                            width: 3; height: 6
+                            radius: 1.5
+                            color: Theme.borderColor
+                        }
+                    }
+                }
+            }
+
             Repeater {
                 model: SystemTray.items
 
@@ -750,7 +813,7 @@ Item {
 
         QsMenuOpener {
             id: menuOpener
-            menu: root.realPopupVisible ? root.activeMenuItem.menu : null
+            menu: root.isEngaged && root.activeMenuItem && root.activeMenuItem !== root.vpnMenuItem ? root.activeMenuItem.menu : null
         }
 
         ListView {
@@ -761,7 +824,7 @@ Item {
             interactive: contentHeight > height
             boundsBehavior: Flickable.StopAtBounds
             spacing: 2
-            model: root.settingsMenuPreviewVisible ? root.settingsMenuPreviewItems : (root.realPopupVisible ? menuOpener.children : null)
+            model: root.settingsMenuPreviewVisible ? root.settingsMenuPreviewItems : (root.vpnPopupVisible ? root.vpnMenuItems : root.realPopupVisible ? menuOpener.children : null)
 
             delegate: Rectangle {
                 id: menuRow

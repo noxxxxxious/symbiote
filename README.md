@@ -46,6 +46,7 @@ The package names and Quickshell dependencies are documented by Arch's [Quickshe
 | --- | --- |
 | `pipewire-pulse` | Recommended for applications that use PulseAudio; the shell itself talks to PipeWire directly. |
 | `pipewire-alsa` | Routes applications using ALSA through PipeWire. |
+| `openvpn` and `networkmanager-vpn-plugin-openvpn` | Required for the OpenVPN dashboard and tray controls. |
 | `bluez-utils` | Provides `bluetoothctl` for diagnosing Bluetooth; the shell does not invoke it. |
 | `libnotify` | Provides `notify-send` for the Settings panel's test-notification button. |
 | `zenity` or `kdialog` | Opens the wallpaper folder picker. You can also type the directory in Settings. |
@@ -102,6 +103,28 @@ exec-once = quickshell -c faishell --no-duplicate
 
 The shell includes its own wallpaper window and notification server. Stop any other notification daemon, such as Dunst or Mako, if you want this shell to receive notifications.
 
+## OpenVPN profiles
+
+The VPN dashboard discovers `.ovpn` files in `~/.vpn`. Select **Connect** to import a profile into NetworkManager and start it. The shell reuses its imported profile on later connections and reimports it if the `.ovpn` file changes. Imported profiles are restricted to your user and have autoconnect disabled.
+
+On Arch Linux, install the VPN runtime/plugin if you do not already have them:
+
+```bash
+sudo pacman -S --needed openvpn networkmanager-vpn-plugin-openvpn
+```
+
+The headless plugin is provided by Arch's [NetworkManager OpenVPN plugin package](https://archlinux.org/packages/extra/x86_64/networkmanager-vpn-plugin-openvpn/). On other distributions, install their NetworkManager OpenVPN plugin and OpenVPN packages.
+
+For profiles using username/password authentication, point `auth-user-pass` at a file containing the username on the first line and password on the second. Relative paths are resolved from the profile's directory, so this works for `~/.vpn/example.ovpn` with credentials in `~/.vpn/auth`:
+
+```text
+auth-user-pass auth
+```
+
+The helper reads that file when connecting. It passes the password to NetworkManager through an inherited pipe, keeps it out of command arguments and shell settings, and sets the imported profile's password flag to not save it. Profiles needing an interactive password/OTP or encrypted-key prompt are not supported by this UI. NetworkManager manages tunnel routes and DNS.
+
+When NetworkManager reports a connected VPN, a lock appears in the shell's tray. Click it for **Disconnect VPN**, or disconnect from the VPN dashboard. Status updates every three seconds, including VPNs activated outside the shell through NetworkManager. VPNs launched directly with `openvpn` outside NetworkManager are not tracked. Disconnect an active VPN before connecting another profile through this panel.
+
 ## Keyboard shortcuts
 
 Add bindings to your Hyprland configuration; change the keys to suit your setup:
@@ -140,7 +163,7 @@ See [device controls](DEVICE_CONTROLS.md) for more detail about audio, Bluetooth
 
 Audio includes default input/output selection, volume, mute, and an output volume/mute OSD. Bluetooth includes power, timed scanning, pairing prompts, connections, trust, and forget. Wi-Fi includes power, timed scanning, adapter selection, saved connections, open networks, WPA/WPA2/WPA3 password entry, and disconnect.
 
-Enterprise/WEP Wi-Fi profiles must be configured through NetworkManager first; hidden-network setup is not included. Captive portals still require browser sign-in. The VPN and Media dashboard tabs are placeholders, and brightness OSD is not implemented.
+Enterprise/WEP Wi-Fi profiles must be configured through NetworkManager first; hidden-network setup is not included. Captive portals still require browser sign-in. The Media dashboard tab is a placeholder, and brightness OSD is not implemented.
 
 ## Development and checks
 
@@ -149,10 +172,12 @@ From the repository root, run the device checks without changing real hardware:
 ```bash
 bash tests/run-devices.sh
 bash tests/run-wifi.sh
+bash tests/run-vpn.sh
 python3 tests/test_bluetooth_pair.py
+python3 tests/test_vpn_helper.py
 ```
 
-The QML checks use Qt Test and an offscreen Quickshell instance. Install `ripgrep` for the device/Wi-Fi runners, and the Python pairing dependencies for the pairing-agent tests. Other existing suites are `tests/run-workspaces.sh`, `tests/run-notifications.sh`, and `tests/run-power-menu.sh`; the notification and power-menu suites currently have known failing assertions.
+The QML checks use Qt Test and an offscreen Quickshell instance. Install `ripgrep` for the device/Wi-Fi/VPN runners, and the Python dependencies listed above for the helper tests. Other existing suites are `tests/run-workspaces.sh`, `tests/run-notifications.sh`, and `tests/run-power-menu.sh`; the notification and power-menu suites currently have known failing assertions.
 
 To rebuild shaders after editing their source, install `qt6-shadertools` and run:
 
